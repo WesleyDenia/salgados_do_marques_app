@@ -2,8 +2,7 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const api = axios.create({
-  baseURL: "http://192.168.1.160:8080/api/v1",
-  //baseURL: "http://192.168.1.73:8080/api/v1", 
+  baseURL: "https://api.salgadosdomarques.pt/api/v1",
   timeout: 10000,
 });
 
