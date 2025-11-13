@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
   },
   logo: {
     width: 120,
-    height: 40,
+    height: 45,
   },
   coinxinhasContainer: {
     flexDirection: "row",

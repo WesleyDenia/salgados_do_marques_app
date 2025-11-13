@@ -3,18 +3,19 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   TouchableWithoutFeedback,
-  Keyboard,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -54,10 +55,10 @@ export default function LoginScreen() {
             keyboardShouldPersistTaps="handled"
           >
             <View style={styles.container}>
-              <Text style={[Typography.title, styles.title]}>Bem-vindo 👋</Text>
-              <Text style={[Typography.subtitle, styles.subtitle]}>
-                Faça login para continuar
-              </Text>
+              <Image
+                source={require("@/assets/images/logo_icon.png")}
+                style={styles.logo}
+              />             
 
               <TextInput
                 style={styles.input}
@@ -106,14 +107,20 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: Colors.light.background },
+  safeArea: { flex: 1, backgroundColor: Colors.light.primary },
   scrollContainer: { flexGrow: 1, justifyContent: "center" },
   container: { padding: 24 },
-  title: { marginBottom: 8, textAlign: "center", color: Colors.light.text },
+  logo: {
+    width: 180,
+    height: 180,
+    alignSelf: "center",
+    marginBottom: 16,
+    resizeMode: "contain",
+  },
   subtitle: {
     marginBottom: 32,
     textAlign: "center",
-    color: Colors.light.textSecondary,
+    color: Colors.light.textLight,
   },
   input: {
     backgroundColor: Colors.light.background,
@@ -125,12 +132,12 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
   },
   button: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: Colors.light.secondary,
     borderRadius: 8,
     padding: 16,
     alignItems: "center",
     marginBottom: 16,
   },
   buttonText: { color: Colors.light.textLight },
-  link: { color: Colors.light.secondary, textAlign: "center", marginTop: 8 },
+  link: { color: Colors.light.textLight, textAlign: "center", marginTop: 8 },
 });
