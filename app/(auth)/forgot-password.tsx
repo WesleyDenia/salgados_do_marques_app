@@ -53,7 +53,7 @@ const MethodButtonText = styled.Text<{ active: boolean }>`
   text-align: center;
   font-size: 15px;
   font-weight: 600;
-  color: ${({ theme, active }) => (active ? theme.colors.textLight : theme.colors.text)};
+  color: ${({ theme, active }) => (active ? theme.colors.textLight : theme.colors.textSecondary)};
 `;
 
 const Input = styled.TextInput`
@@ -102,14 +102,35 @@ export default function ForgotPasswordScreen() {
   const { theme } = useThemeMode();
   const [method, setMethod] = useState<ResetMethod>("whatsapp");
   const [identifier, setIdentifier] = useState("");
+  const [phoneDigits, setPhoneDigits] = useState("");
 
   const { send, loading, feedback, error, resetState } = useForgotPassword();
 
   const placeholder =
-    method === "whatsapp" ? "Número do WhatsApp (+351900123456)" : "E-mail cadastrado";
+    method === "whatsapp" ? "Número do WhatsApp (+351 999 999 999)" : "E-mail cadastrado";
+
+  function formatPhoneDisplay(digits: string) {
+    const parts = digits.match(/.{1,3}/g) ?? [];
+    const formatted = parts.join(" ").trim();
+    return formatted ? `+351 ${formatted}` : "+351 ";
+  }
+
+  function normalizePhoneForApi(digits: string) {
+    return digits ? `+351${digits}` : "";
+  }
+
+  function handlePhoneChange(text: string) {
+    const digitsOnly = text.replace(/\D/g, "");
+    const withoutPrefix = digitsOnly.startsWith("351") ? digitsOnly.slice(3) : digitsOnly;
+    setPhoneDigits(withoutPrefix.slice(0, 9));
+    resetState();
+  }
 
   async function handleSubmit() {
-    const trimmed = identifier.trim();
+    const trimmed =
+      method === "whatsapp"
+        ? normalizePhoneForApi(phoneDigits)
+        : identifier.trim();
 
     if (!trimmed) {
       Alert.alert("Campos obrigatórios", "Informe o contato para seguir com a recuperação.");
@@ -142,6 +163,7 @@ export default function ForgotPasswordScreen() {
     if (method !== nextMethod) {
       setMethod(nextMethod);
       setIdentifier("");
+      setPhoneDigits("");
       resetState();
     }
   }
@@ -177,8 +199,13 @@ export default function ForgotPasswordScreen() {
             placeholderTextColor={theme.colors.placeholderText}
             keyboardType={method === "whatsapp" ? "phone-pad" : "email-address"}
             autoCapitalize="none"
-            value={identifier}
+            value={method === "whatsapp" ? formatPhoneDisplay(phoneDigits) : identifier}
             onChangeText={(text) => {
+              if (method === "whatsapp") {
+                handlePhoneChange(text);
+                return;
+              }
+
               setIdentifier(text);
               resetState();
             }}

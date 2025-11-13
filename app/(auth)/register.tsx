@@ -1,3 +1,7 @@
+import DateTimePicker, {
+  DateTimePickerAndroid,
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import { useEffect, useState } from "react";
 import {
   View,
@@ -12,12 +16,14 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Platform,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors, Typography } from "@/constants/theme";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/api/api";
+import { Calendar } from "lucide-react-native";
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -39,6 +45,8 @@ export default function RegisterScreen() {
     hash: string;
     version: string;
   } | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [tempDate, setTempDate] = useState(new Date());
 
   useEffect(() => {
     let active = true;
@@ -68,6 +76,72 @@ export default function RegisterScreen() {
       active = false;
     };
   }, []);
+
+  function formatDate(date: Date) {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, "0");
+    const day = `${date.getDate()}`.padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  function parseBirthDate(value: string) {
+    const parsed = new Date(value);
+    return isNaN(parsed.getTime()) ? new Date() : parsed;
+  }
+
+  function handleBirthDateChange(rawValue: string) {
+    const digitsOnly = rawValue.replace(/\D/g, "").slice(0, 8);
+
+    if (digitsOnly.length <= 4) {
+      setBirthDate(digitsOnly);
+      return;
+    }
+
+    if (digitsOnly.length <= 6) {
+      setBirthDate(`${digitsOnly.slice(0, 4)}-${digitsOnly.slice(4)}`);
+      return;
+    }
+
+    setBirthDate(
+      `${digitsOnly.slice(0, 4)}-${digitsOnly.slice(4, 6)}-${digitsOnly.slice(6)}`
+    );
+  }
+
+  function openDatePicker() {
+    const current = birthDate ? parseBirthDate(birthDate) : new Date();
+
+    if (Platform.OS === "android") {
+      DateTimePickerAndroid.open({
+        value: current,
+        mode: "date",
+        maximumDate: new Date(),
+        onChange: (_event, selectedDate) => {
+          if (selectedDate) {
+            setBirthDate(formatDate(selectedDate));
+          }
+        },
+      });
+      return;
+    }
+
+    setTempDate(current);
+    setShowDatePicker(true);
+  }
+
+  function handleIosDateChange(_event: DateTimePickerEvent, selectedDate?: Date) {
+    if (selectedDate) {
+      setTempDate(selectedDate);
+    }
+  }
+
+  function confirmIosDate() {
+    setBirthDate(formatDate(tempDate));
+    setShowDatePicker(false);
+  }
+
+  function cancelIosDate() {
+    setShowDatePicker(false);
+  }
 
   async function handleRegister() {
     if (!name || !email || !password || !confirm || !phone) {
@@ -178,14 +252,24 @@ export default function RegisterScreen() {
                 onChangeText={setNif}
               />
 
-              <TextInput
-                style={styles.input}
-                placeholder="Data de nascimento (YYYY-MM-DD)"
-                placeholderTextColor={Colors.light.textSecondary}
-                keyboardType="numbers-and-punctuation"
-                value={birthDate}
-                onChangeText={setBirthDate}
-              />
+              <View style={styles.dateInputContainer}>
+                <TextInput
+                  style={[styles.input, styles.dateInput]}
+                  placeholder="Data de nascimento (YYYY-MM-DD)"
+                  placeholderTextColor={Colors.light.textSecondary}
+                  keyboardType="numbers-and-punctuation"
+                  value={birthDate}
+                  onChangeText={handleBirthDateChange}
+                />
+                <TouchableOpacity
+                  style={styles.calendarButton}
+                  onPress={openDatePicker}
+                  accessibilityRole="button"
+                  accessibilityLabel="Selecionar data de nascimento no calendário"
+                >
+                  <Calendar color={Colors.light.textSecondary} size={20} />
+                </TouchableOpacity>
+              </View>
 
               <TextInput
                 style={styles.input}
@@ -260,6 +344,39 @@ export default function RegisterScreen() {
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+      {Platform.OS === "ios" && (
+        <Modal transparent visible={showDatePicker} animationType="fade">
+          <View style={styles.modalWrapper}>
+            <TouchableWithoutFeedback onPress={cancelIosDate}>
+              <View style={styles.modalOverlay} />
+            </TouchableWithoutFeedback>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Selecione a data</Text>
+              <DateTimePicker
+                value={tempDate}
+                mode="date"
+                display="spinner"
+                maximumDate={new Date()}
+                locale="pt-PT"
+                onChange={handleIosDateChange}
+              />
+              <View style={styles.modalActions}>
+                <TouchableOpacity style={styles.modalAction} onPress={cancelIosDate}>
+                  <Text style={styles.modalActionText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalAction, styles.modalActionPrimary]}
+                  onPress={confirmIosDate}
+                >
+                  <Text style={[styles.modalActionText, styles.modalActionPrimaryText]}>
+                    Confirmar
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 }
@@ -288,6 +405,19 @@ const styles = StyleSheet.create({
   },
   buttonText: { color: Colors.light.textLight },
   link: { color: Colors.light.secondary, textAlign: "center" },
+  dateInputContainer: {
+    position: "relative",
+    marginBottom: 16,
+  },
+  dateInput: { marginBottom: 0, paddingRight: 44 },
+  calendarButton: {
+    position: "absolute",
+    right: 12,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
   termsContainer: { marginTop: 8, marginBottom: 24 },
   termsError: { color: "#B00020" },
   checkboxContainer: { flexDirection: "row", alignItems: "center" },
@@ -322,4 +452,48 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginLeft: 8,
   },
+  modalWrapper: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  modalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  modalContent: {
+    margin: 24,
+    backgroundColor: Colors.light.background,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  modalTitle: {
+    ...Typography.subtitle,
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 12,
+    columnGap: 12,
+  },
+  modalAction: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.light.tabIconDefault,
+    alignItems: "center",
+  },
+  modalActionPrimary: {
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
+  },
+  modalActionText: { color: Colors.light.text },
+  modalActionPrimaryText: { color: Colors.light.textLight },
 });
