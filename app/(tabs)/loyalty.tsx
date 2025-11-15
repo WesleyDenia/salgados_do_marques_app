@@ -176,6 +176,14 @@ export default function LoyaltyScreen() {
     <View style={styles.safeArea}>
       <StatusBar backgroundColor={theme.colors.primary} barStyle={barStyle} />
 
+      <LoyaltyBanner
+        points={data?.points ?? 0}
+        goal={bannerGoal}
+        loading={loyaltyLoading}
+        showRewardsButton={false}
+        milestones={milestones}
+      />
+
       <FlatList
         data={rewards}
         keyExtractor={(item) => item.id.toString()}
@@ -189,14 +197,7 @@ export default function LoyaltyScreen() {
           />
         }
         ListHeaderComponent={
-          <View style={styles.header}>
-            <LoyaltyBanner
-              points={data?.points ?? 0}
-              goal={bannerGoal}
-              loading={loyaltyLoading}
-              showRewardsButton={false}
-              milestones={milestones}
-            />
+          <View style={styles.header}>            
             <Text style={[Typography.subtitle, styles.subtitle]}>
               Troque suas Coinxinhas por recompensas!
             </Text>
@@ -222,7 +223,6 @@ const createStyles = (theme: AppTheme, gridTheme: LoyaltyGridTheme) =>
     safeArea: {
       flex: 1,
       backgroundColor: theme.general.screenBackground,
-      marginTop: -12,
     },
     listContent: {
       paddingBottom: theme.spacing.huge,

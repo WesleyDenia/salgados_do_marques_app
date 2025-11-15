@@ -12,7 +12,7 @@ type AuthContextType = {
   signIn: (email: string, password: string) => Promise<void>;
   register: (data: any) => Promise<void>;
   signOut: () => Promise<void>;
-  updateUser: (data: Partial<User>) => Promise<void>; // 👈 novo método
+  updateUser: (data: Partial<User>) => Promise<void>; 
   loading: boolean;
 };
 
