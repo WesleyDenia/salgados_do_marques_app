@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar } from "react-native";
 import { useThemeMode } from "@/context/ThemeContext";
 import { AppTheme } from "@/constants/theme";
-import { useCouponsData } from "@/hooks/useCouponsData";
+import { useCoupons } from "@/context/CouponsContext";
 import AppHeader from "@/components/AppHeader";
 import { LoyaltyProvider } from "@/context/LoyaltyContext";
 
@@ -11,7 +11,7 @@ export default function CouponDetailsScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const router = useRouter();
   const { theme, mode } = useThemeMode();
-  const { availableCoupons } = useCouponsData();
+  const { availableCoupons } = useCoupons();
 
   const coupon = useMemo(() => {
     const parsedId = Number(id);

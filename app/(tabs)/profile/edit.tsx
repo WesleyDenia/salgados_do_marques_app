@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import {
   View,
   Text,
@@ -20,8 +20,7 @@ import { User } from "@/types";
 
 export default function ProfileEditScreen() {
   const router = useRouter();
-  const { updateUser } = useAuth();
-  const { user } = useLocalSearchParams<{ user?: string }>();
+  const { updateUser, user: authUser } = useAuth();
   const { theme, mode } = useThemeMode();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const barStyle = mode === "dark" ? "light-content" : "dark-content";
@@ -30,15 +29,11 @@ export default function ProfileEditScreen() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      try {
-        setForm(JSON.parse(user));
-        setLoading(false);
-      } catch (e) {
-        console.error("Erro ao parsear usuário recebido:", e);
-      }
+    if (authUser) {
+      setForm(authUser);
     }
-  }, [user]);
+    setLoading(false);
+  }, [authUser]);
 
   const handleChange = (field: keyof User, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -68,6 +63,14 @@ export default function ProfileEditScreen() {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  if (!authUser) {
+    return (
+      <View style={styles.centered}>
+        <Text style={{ color: theme.colors.text }}>Não foi possível carregar os dados.</Text>
       </View>
     );
   }

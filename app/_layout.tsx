@@ -2,8 +2,10 @@ import { Slot, useRouter, useSegments } from "expo-router";
 import { View, ActivityIndicator, Platform } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ThemeProvider, useThemeMode } from "@/context/ThemeContext";
+import { CouponsProvider } from "@/context/CouponsContext";
 import * as NavigationBar from "expo-navigation-bar";
 
 function AuthGuard() {
@@ -23,23 +25,18 @@ function AuthGuard() {
       ? allowedStandaloneGroups.includes(currentGroup)
       : false;
 
-    console.log("🔹 currentGroup:", currentGroup);
-    console.log("🔹 user:", user ? "sim" : "não");
-
     // 🚫 Usuário não logado → garantir que está no grupo (auth)
     if (!user && !inAuthGroup && !inAllowedStandalone) {
-      console.log("🚫 Não logado → redirecionando para (auth)/login");
       router.replace("/(auth)/login");
       return;
     }
 
     // ✅ Usuário logado → garantir que está nas tabs
     if (user && !inTabsGroup && !inAllowedStandalone) {
-      console.log("✅ Logado → redirecionando para (tabs)");
       router.replace("/(tabs)");
       return;
     }
-  }, [user, loading, segments]);
+  }, [user, loading, segments, router]);
 
   if (loading) {
     return (
@@ -62,9 +59,13 @@ function AuthGuard() {
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <ThemedApp />
-      </AuthProvider>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <CouponsProvider>
+            <ThemedApp />
+          </CouponsProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
     </ThemeProvider>
   );
 }

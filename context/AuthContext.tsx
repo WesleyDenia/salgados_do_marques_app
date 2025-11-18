@@ -1,8 +1,15 @@
 // context/AuthContext.tsx
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useCallback,
+} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Appearance } from "react-native";
-import api from "@/api/api";
+import api, { setUnauthorizedHandler } from "@/api/api";
 import { User, AppConfig } from "@/types";
 import { useThemeMode, ThemeMode } from "@/context/ThemeContext";
 
@@ -51,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadUser();
   }, [setMode]);
 
-  async function persistConfig(value: AppConfig | null) {
+  const persistConfig = useCallback(async (value: AppConfig | null) => {
     if (value) {
       setConfig(value);
       await AsyncStorage.setItem("config", JSON.stringify(value));
@@ -59,7 +66,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setConfig(null);
       await AsyncStorage.removeItem("config");
     }
-  }
+  }, []);
+
+  const resetSession = useCallback(async () => {
+    await AsyncStorage.removeItem("user");
+    await AsyncStorage.removeItem("token");
+    await persistConfig(null);
+    setUser(null);
+    delete api.defaults.headers.Authorization;
+    const systemScheme = Appearance.getColorScheme();
+    setMode(systemScheme === "dark" ? "dark" : "light");
+  }, [persistConfig, setMode]);
 
   async function signIn(email: string, password: string) {
     const { data } = await api.post("/login", { email, password });
@@ -104,13 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await api.post("/logout");
     } catch {}
-    await AsyncStorage.removeItem("user");
-    await AsyncStorage.removeItem("token");
-    setUser(null);
-    await persistConfig(null);
-    delete api.defaults.headers.Authorization;
-    const systemScheme = Appearance.getColorScheme();
-    setMode(systemScheme === "dark" ? "dark" : "light");
+    await resetSession();
   }
 
   // 🧠 Novo método para atualizar parcialmente o usuário localmente
@@ -123,6 +134,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setMode(data.theme as ThemeMode);
     }
   }
+
+  useEffect(() => {
+    setUnauthorizedHandler(async () => {
+      await resetSession();
+    });
+    return () => {
+      setUnauthorizedHandler(null);
+    };
+  }, [resetSession]);
 
   return (
     <AuthContext.Provider

@@ -113,12 +113,7 @@ export default function ProfileScreen() {
 
         <TouchableOpacity
           style={[styles.button, styles.primaryButton]}
-          onPress={() =>
-            router.push({
-              pathname: "/(tabs)/profile/edit",
-              params: { user: JSON.stringify(user) },
-            })
-          }
+          onPress={() => router.push("/(tabs)/profile/edit")}
         >
           <Edit3 size={18} color={theme.colors.textLight} />
           <Text style={styles.buttonText}>Editar Perfil</Text>

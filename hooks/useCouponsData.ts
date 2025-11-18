@@ -11,7 +11,11 @@ export type UserCoupon = {
   status: "pending" | "done";
 };
 
-export function useCouponsData() {
+type UseCouponsOptions = {
+  enabled?: boolean;
+};
+
+export function useCouponsData({ enabled = true }: UseCouponsOptions = {}) {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [myCouponsMap, setMyCouponsMap] = useState<Record<number, UserCoupon>>({});
   const [loading, setLoading] = useState(true);
@@ -28,12 +32,14 @@ export function useCouponsData() {
   }, []);
 
   const fetchCoupons = useCallback(async () => {
+    if (!enabled || !mountedRef.current) return;
     const { data } = await api.get("/coupons");
     if (!mountedRef.current) return;
     setCoupons(data.data ?? data);
-  }, []);
+  }, [enabled]);
 
   const fetchMyCoupons = useCallback(async () => {
+    if (!enabled || !mountedRef.current) return;
     const { data } = await api.get("/my-coupons");
     if (!mountedRef.current) return;
 
@@ -48,10 +54,10 @@ export function useCouponsData() {
     });
 
     setMyCouponsMap(map);
-  }, []);
+  }, [enabled]);
 
   const loadInitialData = useCallback(async () => {
-    if (!mountedRef.current) return;
+    if (!mountedRef.current || !enabled) return;
     setLoading(true);
     try {
       await Promise.all([fetchCoupons(), fetchMyCoupons()]);
@@ -62,10 +68,10 @@ export function useCouponsData() {
         setLoading(false);
       }
     }
-  }, [fetchCoupons, fetchMyCoupons]);
+  }, [enabled, fetchCoupons, fetchMyCoupons]);
 
   const refresh = useCallback(async () => {
-    if (!mountedRef.current) return;
+    if (!mountedRef.current || !enabled) return;
     setRefreshing(true);
     try {
       await Promise.all([fetchCoupons(), fetchMyCoupons()]);
@@ -76,15 +82,21 @@ export function useCouponsData() {
         setRefreshing(false);
       }
     }
-  }, [fetchCoupons, fetchMyCoupons]);
+  }, [enabled, fetchCoupons, fetchMyCoupons]);
 
   useEffect(() => {
-    loadInitialData();
-  }, [loadInitialData]);
+    if (enabled) {
+      loadInitialData();
+    } else {
+      setCoupons([]);
+      setMyCouponsMap({});
+      setLoading(false);
+    }
+  }, [enabled, loadInitialData]);
 
   const activateCoupon = useCallback(
     async (couponId: number) => {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || !enabled) return;
       try {
         setProcessingId(couponId);
         const { data } = await api.post("/my-coupons", { coupon_id: couponId });
@@ -102,7 +114,7 @@ export function useCouponsData() {
         }
       }
     },
-    []
+    [enabled]
   );
 
   const availableCoupons = useMemo(() => {
@@ -129,4 +141,3 @@ export function useCouponsData() {
     isActiveForMe,
   };
 }
-

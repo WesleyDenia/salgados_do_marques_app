@@ -32,6 +32,29 @@ export default function ProductDetailScreen() {
     return raw.replace(/\r\n/g, "\n\n").trim();
   }, [params.description]);
   const barStyle = mode === "dark" ? "light-content" : "dark-content";
+  const markdownStyles = useMemo(
+    () =>
+      StyleSheet.create({
+        body: {
+          color: theme.colors.text,
+          fontSize: 16,
+          lineHeight: 22,
+        },
+        text: {
+          color: theme.colors.text,
+          fontSize: 16,
+          lineHeight: 22,
+        },
+        strong: { color: theme.colors.text },
+        heading1: { color: theme.colors.text },
+        heading2: { color: theme.colors.text },
+        heading3: { color: theme.colors.text },
+        bullet_list: { marginVertical: 8 },
+        ordered_list: { marginVertical: 8 },
+      }),
+    [theme.colors.text]
+  );
+
   const handleGoBack = () => {
     router.replace("/(tabs)/menu");
   };
@@ -112,23 +135,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
   },
-});
-
-const markdownStyles = StyleSheet.create({
-  body: {
-    color: "#1F2937",
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  text: {
-    color: "#1F2937",
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  strong: { color: "#111827" },
-  heading1: { color: "#111827" },
-  heading2: { color: "#111827" },
-  heading3: { color: "#111827" },
-  bullet_list: { marginVertical: 8 },
-  ordered_list: { marginVertical: 8 },
 });

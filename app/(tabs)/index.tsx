@@ -6,6 +6,8 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
+  Text,
+  TouchableOpacity,
 } from "react-native";
 import { useCallback, useState, useRef, useMemo } from "react";
 import { AppTheme } from "@/constants/theme";
@@ -32,6 +34,7 @@ export default function HomeScreen() {
   const {
     blocks: homeContent,
     loading: homeContentLoading,
+    error: homeContentError,
     refresh: refreshHomeContent,
   } = useHomeContent();
   const [refreshing, setRefreshing] = useState(false);
@@ -126,6 +129,10 @@ export default function HomeScreen() {
     [couponRefreshKey, triggerConfetti],
   );
 
+  const handleRetryHomeContent = useCallback(() => {
+    void refreshHomeContent();
+  }, [refreshHomeContent]);
+
   return (
     <View style={styles.safeArea}>
       <StatusBar backgroundColor={theme.colors.primary} barStyle={barStyle} />
@@ -166,7 +173,14 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {homeContentLoading ? (
+        {homeContentError ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{homeContentError}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={handleRetryHomeContent}>
+              <Text style={styles.retryButtonText}>Tentar novamente</Text>
+            </TouchableOpacity>
+          </View>
+        ) : homeContentLoading ? (
           <ActivityIndicator
             color={theme.colors.primary}
             style={styles.contentLoader}
@@ -201,6 +215,30 @@ const createStyles = (theme: AppTheme, homeTheme: HomeTheme) =>
     contentLoader: {
       marginTop: homeTheme.layout.paddingBottom / 2,
       marginBottom: homeTheme.banner.marginBottom,
+    },
+    errorContainer: {
+      marginHorizontal: theme.spacing.lg,
+      padding: theme.spacing.lg,
+      borderRadius: theme.radius.md,
+      borderWidth: 1,
+      borderColor: theme.general.borderColor,
+      backgroundColor: theme.general.surface,
+      alignItems: "center",
+    },
+    errorText: {
+      color: theme.colors.textSecondary,
+      textAlign: "center",
+    },
+    retryButton: {
+      marginTop: theme.spacing.sm,
+      paddingHorizontal: theme.spacing.lg,
+      paddingVertical: theme.spacing.sm,
+      borderRadius: theme.radius.md,
+      backgroundColor: theme.colors.primary,
+    },
+    retryButtonText: {
+      color: theme.colors.textLight,
+      fontWeight: "600",
     },
     fullscreenConfetti: {
       position: "absolute",

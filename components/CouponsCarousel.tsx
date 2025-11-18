@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Typography, AppTheme } from "@/constants/theme";
 import { getCouponsCarouselTheme, CouponsCarouselTheme } from "@/constants/themeCoupons";
-import { useCouponsData } from "@/hooks/useCouponsData";
+import { useCoupons } from "@/context/CouponsContext";
 import CouponCard from "@/components/CouponCard";
 import { useThemeMode } from "@/context/ThemeContext";
 
@@ -42,7 +42,7 @@ export default function CouponsCarousel({ refreshKey }: CouponsCarouselProps) {
     refresh,
     activateCoupon,
     isActiveForMe,
-  } = useCouponsData();
+  } = useCoupons();
 
   useEffect(() => {
     if (!refreshKey) return;
