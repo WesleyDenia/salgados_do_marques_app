@@ -19,12 +19,21 @@ export function useHomeContent(): UseHomeContentResult {
     setError(null);
     try {
       const response = await api.get("/content-home");
-      const data = Array.isArray(response.data?.data)
+      const raw = Array.isArray(response.data?.data)
         ? response.data.data
         : Array.isArray(response.data)
           ? response.data
           : [];
-      setBlocks(data);
+
+      const normalized = raw
+        .filter((block: ContentHomeBlock) => block?.is_active !== false)
+        .sort(
+          (a: ContentHomeBlock, b: ContentHomeBlock) =>
+            (a.display_order ?? Number.MAX_SAFE_INTEGER) -
+            (b.display_order ?? Number.MAX_SAFE_INTEGER),
+        );
+
+      setBlocks(normalized);
     } catch (err) {
       console.error("Erro ao carregar conteúdos da home:", err);
       setError("Não foi possível carregar os conteúdos da home.");

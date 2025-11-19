@@ -7,7 +7,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
-    <string>salgados-app</string>
+    <string>Salgados do Marquês</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -28,7 +28,7 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>salgadosapp</string>
-          <string>com.anonymous.salgadosapp</string>
+          <string>pt.salgadosdomarques.salgadosapp</string>
         </array>
       </dict>
     </array>

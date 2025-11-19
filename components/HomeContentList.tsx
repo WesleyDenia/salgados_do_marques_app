@@ -193,17 +193,18 @@ function HomeContentListComponent({ blocks, renderComponent }: HomeContentListPr
 const createStyles = (theme: AppTheme) =>
   StyleSheet.create({
     wrapper: {
-      width: "100%",
-      
+      width: "100%",      
     },
     blockContainer: {
       ...resolveShadow(theme.shadow.card),
+      paddingHorizontal: theme.spacing.sm,
     },
     blockSpacing: {
       marginBottom: theme.spacing.lg,
     },
     componentContainer: {
       width: "100%",
+      padding: theme.spacing.lg,
     },
     imageContainer: {
       width: "100%",
@@ -216,7 +217,7 @@ const createStyles = (theme: AppTheme) =>
       width: "100%",
     },
     contentContainer: {
-      padding: theme.spacing.lg,
+      padding: theme.spacing.sm,
       gap: theme.spacing.sm,
     },
     splitContainer: {

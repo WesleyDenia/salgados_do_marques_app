@@ -1,4 +1,4 @@
-package com.anonymous.salgadosapp
+package pt.salgadosdomarques.salgadosapp
 
 import android.app.Application
 import android.content.res.Configuration

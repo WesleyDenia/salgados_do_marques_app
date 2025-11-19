@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Modal,
 } from "react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppTheme, Typography, resolveShadow } from "@/constants/theme";
@@ -21,6 +22,7 @@ import LoyaltyBanner from "@/components/LoyaltyBanner";
 import { useThemeMode } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import { resolveAssetUrl } from "@/utils/url";
+import QuantitySelector from "@/components/QuantitySelector";
 
 export default function LoyaltyScreen() {
   const { theme, mode } = useThemeMode();
@@ -34,6 +36,8 @@ export default function LoyaltyScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [redeemingId, setRedeemingId] = useState<number | null>(null);
+  const [selectedReward, setSelectedReward] = useState<LoyaltyReward | null>(null);
+  const [quantity, setQuantity] = useState(1);
   const milestones = data?.milestones ?? [];
   const bannerGoal =
     milestones.length > 0
@@ -66,10 +70,10 @@ export default function LoyaltyScreen() {
   }, [fetchRewards]);
 
   const handleRedeem = useCallback(
-    async (rewardId: number) => {
+    async (rewardId: number, redemptionQuantity: number) => {
       try {
         setRedeemingId(rewardId);
-        await api.post(`/loyalty/rewards/${rewardId}/redeem`);
+        await api.post(`/loyalty/rewards/${rewardId}/redeem`, { quantity: redemptionQuantity });
         await fetchRewards();
         await refetchSummary();
         setError(null);
@@ -98,7 +102,8 @@ export default function LoyaltyScreen() {
         ? redeemedCoupon?.external_code ?? redeemedCoupon?.coupon?.code ?? null
         : null;
       const isRedeemed = Boolean(displayedCode);
-      const canClaim = points >= item.threshold && !isRedeemed;
+      const availableUnits = Math.floor(points / item.threshold);
+      const canClaim = availableUnits >= 1 && !isRedeemed;
       const assetUri = resolveAssetUrl(item.image, config?.assets_base_url);
       const shouldBlur = !isRedeemed && !canClaim;
       const showLock = !isRedeemed && !canClaim;
@@ -147,7 +152,8 @@ export default function LoyaltyScreen() {
                 ]}
                 onPress={() => {
                   if (canClaim && !isProcessing) {
-                    void handleRedeem(item.id);
+                    setSelectedReward(item);
+                    setQuantity(1);
                   }
                 }}
               >
@@ -214,6 +220,63 @@ export default function LoyaltyScreen() {
         }
         contentContainerStyle={styles.listContent}
       />
+
+      <Modal
+        visible={Boolean(selectedReward)}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedReward(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{selectedReward?.name}</Text>
+            <Text style={styles.modalSubtitle}>
+              {selectedReward
+                ? `Cada unidade custa ${selectedReward.threshold} Coinxinhas`
+                : ""}
+            </Text>
+            <QuantitySelector
+              min={1}
+              max={
+                selectedReward
+                  ? Math.max(1, Math.floor((data?.points ?? 0) / selectedReward.threshold))
+                  : 1
+              }
+              value={quantity}
+              onChange={setQuantity}
+              theme={theme}
+              disabled={!selectedReward}
+              style={styles.quantitySelector}
+            />
+            {selectedReward?.value ? (
+              <Text style={styles.modalValue}>
+                Valor estimado: €{(selectedReward.value * quantity).toFixed(2)}
+              </Text>
+            ) : null}
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalSecondary]}
+                onPress={() => setSelectedReward(null)}
+              >
+                <Text style={styles.modalButtonTextSecondary}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalPrimary]}
+                disabled={!selectedReward}
+                onPress={() => {
+                  if (selectedReward) {
+                    void handleRedeem(selectedReward.id, quantity);
+                    setSelectedReward(null);
+                  }
+                }}
+              >
+                <Text style={styles.modalButtonTextPrimary}>Confirmar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -346,5 +409,65 @@ const createStyles = (theme: AppTheme, gridTheme: LoyaltyGridTheme) =>
     fallbackText: {
       fontSize: 12,
       color: theme.general.placeholderText,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.5)",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: theme.spacing.lg,
+    },
+    modalContent: {
+      width: "100%",
+      borderRadius: theme.radius.lg,
+      backgroundColor: theme.colors.cardBackground,
+      padding: theme.spacing.lg,
+      gap: theme.spacing.md,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: theme.colors.text,
+      textAlign: "center",
+    },
+    modalSubtitle: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+      textAlign: "center",
+    },
+    quantitySelector: {
+      alignSelf: "center",
+    },
+    modalValue: {
+      textAlign: "center",
+      fontWeight: "600",
+      color: theme.colors.text,
+    },
+    modalActions: {
+      flexDirection: "row",
+      gap: theme.spacing.md,
+    },
+    modalButton: {
+      flex: 1,
+      paddingVertical: theme.spacing.sm,
+      borderRadius: theme.radius.md,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    modalPrimary: {
+      backgroundColor: theme.colors.primary,
+    },
+    modalSecondary: {
+      borderWidth: 1,
+      borderColor: theme.general.borderColor,
+      backgroundColor: theme.general.surface,
+    },
+    modalButtonTextPrimary: {
+      color: theme.colors.textLight,
+      fontWeight: "600",
+    },
+    modalButtonTextSecondary: {
+      color: theme.colors.text,
+      fontWeight: "600",
     },
   });

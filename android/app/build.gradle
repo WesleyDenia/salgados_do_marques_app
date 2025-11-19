@@ -1,3 +1,5 @@
+import java.util.Base64
+
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
@@ -8,6 +10,42 @@ def keystorePropertiesFile = rootProject.file("keystore.properties")
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
+
+def envStorePassword = System.getenv("EAS_BUILD_ANDROID_KEYSTORE_PASSWORD") ?: System.getenv("EXPO_ANDROID_KEYSTORE_PASSWORD")
+def envKeyAlias = System.getenv("EAS_BUILD_ANDROID_KEY_ALIAS")
+        ?: System.getenv("EAS_BUILD_ANDROID_KEYSTORE_ALIAS")
+        ?: System.getenv("EXPO_ANDROID_KEYSTORE_ALIAS")
+        ?: System.getenv("EXPO_ANDROID_KEY_ALIAS")
+def envKeyPassword = System.getenv("EAS_BUILD_ANDROID_KEY_PASSWORD")
+        ?: System.getenv("EAS_BUILD_ANDROID_KEYSTORE_KEY_PASSWORD")
+        ?: System.getenv("EXPO_ANDROID_KEY_PASSWORD")
+def envKeystorePath = System.getenv("EAS_BUILD_ANDROID_KEYSTORE_PATH") ?: System.getenv("EXPO_ANDROID_KEYSTORE_PATH")
+
+if (!envKeystorePath) {
+    def envKeystoreBase64 = System.getenv("EAS_BUILD_ANDROID_KEYSTORE_BASE64")
+            ?: System.getenv("EXPO_ANDROID_KEYSTORE_BASE64")
+    if (envKeystoreBase64) {
+        def sanitized = envKeystoreBase64
+                .replaceAll("\\n", "")
+                .replaceAll("\\r", "")
+                .replaceAll("\\s", "")
+        def keystoreOutput = new File(rootProject.projectDir, "upload-keystore-from-env.jks")
+        keystoreOutput.bytes = Base64.getDecoder().decode(sanitized)
+        envKeystorePath = keystoreOutput.absolutePath
+    }
+}
+
+if (!keystoreProperties.containsKey("storeFile") && envKeystorePath) {
+    keystoreProperties['storeFile'] = envKeystorePath
+    keystoreProperties['storePassword'] = envStorePassword
+    keystoreProperties['keyAlias'] = envKeyAlias
+    keystoreProperties['keyPassword'] = envKeyPassword
+}
+
+def isKeystoreConfigured = keystoreProperties['storeFile'] &&
+        keystoreProperties['storePassword'] &&
+        keystoreProperties['keyAlias'] &&
+        keystoreProperties['keyPassword']
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -110,13 +148,13 @@ android {
             keyPassword 'android'
         }
         release {
-            if (keystorePropertiesFile.exists()) {
+            if (isKeystoreConfigured) {
                 storeFile file(keystoreProperties['storeFile'])
                 storePassword keystoreProperties['storePassword']
                 keyAlias keystoreProperties['keyAlias']
                 keyPassword keystoreProperties['keyPassword']
             } else {
-                println("⚠️  Release keystore not configured. Create android/keystore.properties before building a production artifact.")
+                println("⚠️  Release keystore not configured. Provide android/keystore.properties or EXPO_ANDROID_* environment variables.")
             }
         }
     }
@@ -125,8 +163,8 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            if (!keystorePropertiesFile.exists()) {
-                throw new GradleException("Release keystore not configured. Add android/keystore.properties with your upload key credentials.")
+            if (!isKeystoreConfigured) {
+                throw new GradleException("Release keystore not configured. Add android/keystore.properties or configure EXPO_ANDROID_* environment variables with your upload key credentials.")
             }
             signingConfig signingConfigs.release
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'

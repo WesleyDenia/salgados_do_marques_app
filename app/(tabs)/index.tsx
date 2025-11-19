@@ -87,14 +87,6 @@ export default function HomeScreen() {
     [homeContent],
   );
 
-  const hasCouponsComponent = useMemo(
-    () =>
-      homeContent.some(
-        (block) => block.type === "component" && block.component_name === "CouponsCarousel",
-      ),
-    [homeContent],
-  );
-
   const renderDynamicComponent = useCallback(
     (block: ContentHomeBlock) => {
       if (!block.component_name) return null;
@@ -192,11 +184,7 @@ export default function HomeScreen() {
           />
         )}
 
-        {!hasCouponsComponent ? (
-          <View style={styles.componentWrapper}>
-            <CouponsCarousel refreshKey={couponRefreshKey} />
-          </View>
-        ) : null}
+        {/* Componente CouponsCarousel agora é controlado exclusivamente pelos blocos do CMS */}
       </ScrollView>
     </View>
   );

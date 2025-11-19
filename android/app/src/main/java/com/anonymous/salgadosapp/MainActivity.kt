@@ -1,4 +1,4 @@
-package com.anonymous.salgadosapp
+package pt.salgadosdomarques.salgadosapp
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
