@@ -71,9 +71,10 @@ export default function LoyaltyScreen() {
 
   const handleRedeem = useCallback(
     async (rewardId: number, redemptionQuantity: number) => {
+      const safeQuantity = Math.max(1, Math.floor(redemptionQuantity));
       try {
         setRedeemingId(rewardId);
-        await api.post(`/loyalty/rewards/${rewardId}/redeem`, { quantity: redemptionQuantity });
+        await api.post(`/loyalty/rewards/${rewardId}/redeem`, { quantity: safeQuantity });
         await fetchRewards();
         await refetchSummary();
         setError(null);
@@ -102,7 +103,8 @@ export default function LoyaltyScreen() {
         ? redeemedCoupon?.external_code ?? redeemedCoupon?.coupon?.code ?? null
         : null;
       const isRedeemed = Boolean(displayedCode);
-      const availableUnits = Math.floor(points / item.threshold);
+      const threshold = item.threshold > 0 ? item.threshold : null;
+      const availableUnits = threshold ? Math.floor(points / threshold) : 0;
       const canClaim = availableUnits >= 1 && !isRedeemed;
       const assetUri = resolveAssetUrl(item.image, config?.assets_base_url);
       const shouldBlur = !isRedeemed && !canClaim;
@@ -135,7 +137,7 @@ export default function LoyaltyScreen() {
               {item.name}
             </Text>
             <Text style={styles.desc} numberOfLines={2}>
-              {item.threshold} Coinxinhas
+              {threshold ? `${threshold} Coinxinhas` : "Configuração inválida"}
             </Text>
 
             {isRedeemed && displayedCode ? (
@@ -152,8 +154,12 @@ export default function LoyaltyScreen() {
                 ]}
                 onPress={() => {
                   if (canClaim && !isProcessing) {
-                    setSelectedReward(item);
-                    setQuantity(1);
+                    if (availableUnits <= 1) {
+                      void handleRedeem(item.id, 1);
+                    } else {
+                      setSelectedReward(item);
+                      setQuantity(1);
+                    }
                   }
                 }}
               >
@@ -239,7 +245,12 @@ export default function LoyaltyScreen() {
               min={1}
               max={
                 selectedReward
-                  ? Math.max(1, Math.floor((data?.points ?? 0) / selectedReward.threshold))
+                  ? Math.max(
+                      1,
+                      selectedReward.threshold > 0
+                        ? Math.floor((data?.points ?? 0) / selectedReward.threshold)
+                        : 1,
+                    )
                   : 1
               }
               value={quantity}
@@ -266,7 +277,14 @@ export default function LoyaltyScreen() {
                 disabled={!selectedReward}
                 onPress={() => {
                   if (selectedReward) {
-                    void handleRedeem(selectedReward.id, quantity);
+                    const maxUnits = Math.max(
+                      1,
+                      selectedReward.threshold > 0
+                        ? Math.floor((data?.points ?? 0) / selectedReward.threshold)
+                        : 1,
+                    );
+                    const safeQuantity = Math.max(1, Math.min(quantity, maxUnits));
+                    void handleRedeem(selectedReward.id, safeQuantity);
                     setSelectedReward(null);
                   }
                 }}
