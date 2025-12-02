@@ -23,6 +23,7 @@ import { useThemeMode } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import { resolveAssetUrl } from "@/utils/url";
 import QuantitySelector from "@/components/QuantitySelector";
+import { getApiErrorMessage } from "@/utils/errorMessage";
 
 export default function LoyaltyScreen() {
   const { theme, mode } = useThemeMode();
@@ -78,18 +79,18 @@ export default function LoyaltyScreen() {
         await fetchRewards();
         await refetchSummary();
         setError(null);
-      } catch (err: any) {
-        console.error("Erro ao resgatar recompensa", err);
-        const message =
-          err?.response?.data?.errors?.reward?.[0] ??
-          err?.response?.data?.message ??
-          "Não foi possível resgatar a recompensa.";
-        setError(message);
-        Alert.alert("Erro", message);
-      } finally {
-        setRedeemingId(null);
-      }
-    },
+    } catch (err: any) {
+      console.error("Erro ao resgatar recompensa", err);
+      const message = getApiErrorMessage(
+        err,
+        "Não foi possível resgatar a recompensa."
+      );
+      setError(message);
+      Alert.alert("Erro", message);
+    } finally {
+      setRedeemingId(null);
+    }
+  },
     [fetchRewards, refetchSummary]
   );
 

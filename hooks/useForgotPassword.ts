@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 
 import api from "@/api/api";
+import { getApiErrorMessage } from "@/utils/errorMessage";
 
 type ResetMethod = "whatsapp" | "email";
 
@@ -41,7 +42,8 @@ export function useForgotPassword() {
       return data;
     } catch (err) {
       console.error("Falha ao enviar recuperação de senha", err);
-      setError(GENERIC_ERROR);
+      const message = getApiErrorMessage(err, GENERIC_ERROR);
+      setError(message);
       throw err;
     } finally {
       setLoading(false);

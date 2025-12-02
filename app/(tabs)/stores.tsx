@@ -93,19 +93,13 @@ export default function StoresScreen() {
 
   const handleOpenNavigation = useCallback((store: Store) => {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${store.latitude},${store.longitude}&travelmode=driving`;
-    Linking.canOpenURL(url)
-      .then((supported) => {
-        if (!supported) {
-          Alert.alert("Navegação", "Não foi possível abrir o Google Maps.");
-          return;
-        }
-        return Linking.openURL(url);
-      })
-      .catch((err) => {
-        console.error("Erro ao abrir o mapa:", err);
-        Alert.alert("Navegação", "Não foi possível abrir o Google Maps.");
-      });
+
+    Linking.openURL(url).catch((err) => {
+      console.error("Erro ao abrir o mapa:", err);
+      Alert.alert("Navegação", "Não foi possível abrir o Google Maps.");
+    });
   }, []);
+
 
   const renderStore = useCallback(
     ({ item }: { item: Store }) => {

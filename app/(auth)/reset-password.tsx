@@ -12,6 +12,7 @@ import styled from "styled-components/native";
 
 import api from "@/api/api";
 import { useThemeMode } from "@/context/ThemeContext";
+import { getApiErrorMessage } from "@/utils/errorMessage";
 
 const Container = styled(SafeAreaView)`
   flex: 1;
@@ -108,8 +109,10 @@ export default function ResetPasswordScreen() {
         },
       ]);
     } catch (error: any) {
-      const message =
-        error?.response?.data?.message ?? "Não foi possível redefinir a senha. Tente novamente.";
+      const message = getApiErrorMessage(
+        error,
+        "Não foi possível redefinir a senha. Tente novamente."
+      );
       Alert.alert("Ops!", message);
     } finally {
       setLoading(false);

@@ -12,6 +12,7 @@ import styled from "styled-components/native";
 
 import { useVerifyOtp } from "@/hooks/useVerifyOtp";
 import { useThemeMode } from "@/context/ThemeContext";
+import { getApiErrorMessage } from "@/utils/errorMessage";
 
 const Container = styled(SafeAreaView)`
   flex: 1;
@@ -129,7 +130,7 @@ export default function VerifyOtpScreen() {
         },
       ]);
     } catch (err: any) {
-      const message = err?.response?.data?.message ?? error ?? "Código inválido ou expirado.";
+      const message = getApiErrorMessage(err, error ?? "Código inválido ou expirado.");
       Alert.alert("Atenção", message);
     }
   }

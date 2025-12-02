@@ -24,6 +24,7 @@ import { useRouter } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/api/api";
 import { Calendar } from "lucide-react-native";
+import { getApiErrorMessage } from "@/utils/errorMessage";
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -193,7 +194,7 @@ export default function RegisterScreen() {
       Alert.alert("🎉 Conta criada!", "Bem-vindo à Salgados do Marquês!");
       router.replace("/");
     } catch (error: any) {
-      Alert.alert("Erro", error.message || "Falha ao registrar.");
+      Alert.alert("Erro", getApiErrorMessage(error, "Falha ao registrar."));
     } finally {
       setLoading(false);
     }

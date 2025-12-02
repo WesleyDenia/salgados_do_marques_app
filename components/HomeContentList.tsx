@@ -127,7 +127,10 @@ function HomeContentListComponent({ blocks, renderComponent }: HomeContentListPr
           />
         ) : null;
 
-        const ctaLabel = block.cta_label || "Saiba mais";
+        const rawCtaLabel = block.cta_label?.trim() ?? "";
+        const isImageOnlyCta = Boolean(block.cta_image_only);
+        const hasCtaAction = Boolean(block.cta_url || rawCtaLabel);
+        const ctaLabel = rawCtaLabel || "Saiba mais";
 
         const handleCtaPress = () => {
           if (block.cta_url) {
@@ -138,7 +141,7 @@ function HomeContentListComponent({ blocks, renderComponent }: HomeContentListPr
         };
 
         const imageElement =
-          image && (block.cta_url || block.cta_label) ? (
+          image && hasCtaAction ? (
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={block.cta_url ? () => handleOpenUrl(block.cta_url!) : handleCtaPress}
@@ -149,7 +152,7 @@ function HomeContentListComponent({ blocks, renderComponent }: HomeContentListPr
             image
           );
 
-        const ctaButton = (block.cta_label || block.cta_url) ? (
+        const ctaButton = hasCtaAction && !isImageOnlyCta ? (
           <TouchableOpacity style={styles.ctaButton} onPress={handleCtaPress}>
             <Text style={styles.ctaButtonText}>{ctaLabel}</Text>
           </TouchableOpacity>
@@ -193,11 +196,11 @@ function HomeContentListComponent({ blocks, renderComponent }: HomeContentListPr
 const createStyles = (theme: AppTheme) =>
   StyleSheet.create({
     wrapper: {
-      width: "100%",      
+      width: "100%",
+      paddingHorizontal: theme.spacing.sm,      
     },
     blockContainer: {
       ...resolveShadow(theme.shadow.card),
-      paddingHorizontal: theme.spacing.sm,
     },
     blockSpacing: {
       marginBottom: theme.spacing.lg,

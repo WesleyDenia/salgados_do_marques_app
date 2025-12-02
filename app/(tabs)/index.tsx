@@ -17,6 +17,7 @@ import { useLoyalty } from "@/context/LoyaltyContext";
 import { useAuth } from "@/context/AuthContext";
 import LottieView from "lottie-react-native";
 import api from "@/api/api";
+import { getApiErrorMessage } from "@/utils/errorMessage";
 import { useThemeMode } from "@/context/ThemeContext";
 import { useHomeContent } from "@/hooks/useHomeContent";
 import HomeContentList from "@/components/HomeContentList";
@@ -72,7 +73,7 @@ export default function HomeScreen() {
       await updateUser({ loyalty_synced: true });
       await refetch();
     } catch (error) {
-      Alert.alert("Erro", "Não foi possível ativar o bônus agora.");
+      Alert.alert("Erro", getApiErrorMessage(error, "Não foi possível ativar o bônus agora."));
       console.error(error);
     } finally {
       setShowConfetti(false);

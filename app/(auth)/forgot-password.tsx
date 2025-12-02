@@ -6,6 +6,7 @@ import styled from "styled-components/native";
 
 import { useForgotPassword } from "@/hooks/useForgotPassword";
 import { useThemeMode } from "@/context/ThemeContext";
+import { getApiErrorMessage } from "@/utils/errorMessage";
 
 const Container = styled(SafeAreaView)`
   flex: 1;
@@ -154,8 +155,8 @@ export default function ForgotPasswordScreen() {
           params: { phone: trimmed },
         });
       }
-    } catch {
-      Alert.alert("Erro", "Não foi possível enviar sua solicitação. Tente novamente.");
+    } catch (err: any) {
+      Alert.alert("Erro", getApiErrorMessage(err, "Não foi possível enviar sua solicitação. Tente novamente."));
     }
   }
 

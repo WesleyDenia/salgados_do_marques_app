@@ -9,6 +9,7 @@ export type ContentHomeBlock = {
   component_props: Record<string, unknown> | null;
   cta_label: string | null;
   cta_url: string | null;
+  cta_image_only?: boolean | null;
   background_color: string | null;
   display_order: number;
   is_active: boolean;

@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 
 import api from "@/api/api";
+import { getApiErrorMessage } from "@/utils/errorMessage";
 
 type VerifyOtpPayload = {
   phone: string;
@@ -33,7 +34,8 @@ export function useVerifyOtp() {
       return data;
     } catch (err: any) {
       console.error("Falha ao validar OTP", err);
-      setError(err?.response?.data?.message ?? GENERIC_ERROR);
+      const message = getApiErrorMessage(err, GENERIC_ERROR);
+      setError(message);
       throw err;
     } finally {
       setLoading(false);

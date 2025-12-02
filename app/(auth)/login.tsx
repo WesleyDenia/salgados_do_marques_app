@@ -18,6 +18,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { getApiErrorMessage } from "@/utils/errorMessage";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function LoginScreen() {
       await signIn(email, password);
       router.replace("/");
     } catch (error: any) {
-      Alert.alert("Erro", error.message || "Falha ao fazer login.");
+      Alert.alert("Erro", getApiErrorMessage(error, "Falha ao fazer login."));
     } finally {
       setLoading(false);
     }

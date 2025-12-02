@@ -17,6 +17,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useThemeMode } from "@/context/ThemeContext";
 import { AppTheme } from "@/constants/theme";
 import { User } from "@/types";
+import { getApiErrorMessage } from "@/utils/errorMessage";
 
 export default function ProfileEditScreen() {
   const router = useRouter();
@@ -53,7 +54,7 @@ export default function ProfileEditScreen() {
       router.back();
     } catch (error: any) {
       console.error("Erro ao atualizar:", error.response?.data || error);
-      Alert.alert("Erro", "Não foi possível atualizar os dados.");
+      Alert.alert("Erro", getApiErrorMessage(error, "Não foi possível atualizar os dados."));
     } finally {
       setSaving(false);
     }
