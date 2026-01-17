@@ -2,7 +2,7 @@
   "expo": {
     "name": "Salgados do Marquês",
     "slug": "salgados-app",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/logo_icon.png",
     "scheme": "salgadosapp",
@@ -25,6 +25,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "pt.salgadosdomarques.salgadosapp",
+      "versionCode": 2,
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION"
@@ -54,6 +55,7 @@
       "reactCompiler": true
     },
     "extra": {
+      "API_BASE_URL": "https://api.salgadosdomarques.pt/api/v1",
       "router": {},
       "eas": {
         "projectId": "44177758-910b-4b2b-96ce-d59645f142f2"

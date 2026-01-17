@@ -5,15 +5,13 @@ import { HapticTab } from "@/components/haptic-tab";
 import { useThemeMode } from "@/context/ThemeContext";
 import { Home, TicketPercent, UtensilsCrossed, Star, User, MapPin } from "lucide-react-native";
 import AppHeader from "@/components/AppHeader";
-import { LoyaltyProvider } from "@/context/LoyaltyContext";
 
 export default function TabLayout() {
   const { theme } = useThemeMode();
 
   return (
-    
-    <LoyaltyProvider>
-      <AppHeader />      
+    <>
+      <AppHeader />
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: theme.colors.tabIconSelected,
@@ -74,6 +72,6 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
-    </LoyaltyProvider>
+    </>
   );
 }

@@ -12,13 +12,13 @@ import { useAuth } from "@/context/AuthContext";
 import { useThemeMode } from "@/context/ThemeContext";
 import { AppTheme } from "@/constants/theme";
 
-export default function WelcomeBonusButton({
-  onBonusActivated,
-}: {
-  onBonusActivated?: () => void;
-}) {
+type WelcomeBonusButtonProps = {
+  onActivate?: () => Promise<void> | void;
+  loading?: boolean;
+};
+
+export default function WelcomeBonusButton({ onActivate, loading = false }: WelcomeBonusButtonProps) {
   const { user } = useAuth();
-  const [loadingBonus, setLoadingBonus] = useState(false);
   const [pulseAnim] = useState(new Animated.Value(1));
   const { theme } = useThemeMode();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -47,10 +47,8 @@ export default function WelcomeBonusButton({
   }, [user?.loyalty_synced]);
 
   async function handleActivateBonus() {
-    if (loadingBonus) return;
-    setLoadingBonus(true);
-    onBonusActivated?.(); // 🔥 chama o callback para tocar a animação
-    setLoadingBonus(false);
+    if (loading) return;
+    await onActivate?.();
   }
 
   if (user?.loyalty_synced) {
@@ -62,19 +60,19 @@ export default function WelcomeBonusButton({
       <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
         <TouchableOpacity
           onPress={handleActivateBonus}
-          disabled={loadingBonus}
+          disabled={loading}
           activeOpacity={0.8}
         >
           <Image
             source={require("@/assets/images/presente.png")}
-            style={[styles.giftImage, loadingBonus && { opacity: 0.6 }]}
+            style={[styles.giftImage, loading && { opacity: 0.6 }]}
             resizeMode="contain"
           />
         </TouchableOpacity>
       </Animated.View>
 
       <Text style={styles.labelText}>
-        {loadingBonus ? "Ativando..." : "Toque para abrir seu presente 🎁"}
+        {loading ? "Ativando..." : "Toque para abrir seu presente 🎁"}
       </Text>
     </View>
   );

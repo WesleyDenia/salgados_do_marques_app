@@ -1,7 +1,7 @@
-import { Colors, Typography } from "@/constants/theme";
+import { useMemo, useState } from "react";
+import { Typography, AppTheme } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "expo-router";
-import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -19,6 +19,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getApiErrorMessage } from "@/utils/errorMessage";
+import { useThemeMode } from "@/context/ThemeContext";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -26,10 +27,19 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+   const { theme } = useThemeMode();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  const isValidEmail = (value: string) => /\S+@\S+\.\S+/.test(value.trim());
 
   async function handleLogin() {
-    if (!email || !password) {
+    if (!email.trim() || !password.trim()) {
       Alert.alert("Campos obrigatórios", "Informe o email e a senha.");
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      Alert.alert("Email inválido", "Informe um email válido para continuar.");
       return;
     }
 
@@ -64,7 +74,7 @@ export default function LoginScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Email"
-                placeholderTextColor={Colors.light.textSecondary}
+                placeholderTextColor={theme.colors.textSecondary}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 value={email}
@@ -74,7 +84,9 @@ export default function LoginScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Senha"
-                placeholderTextColor={Colors.light.textSecondary}
+                placeholderTextColor={theme.colors.textSecondary}
+                autoCapitalize="none"
+                autoCorrect={false}
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
@@ -86,7 +98,7 @@ export default function LoginScreen() {
                 disabled={loading}
               >
                 {loading ? (
-                  <ActivityIndicator color={Colors.light.background} />
+                  <ActivityIndicator color={theme.colors.textLight} />
                 ) : (
                   <Text style={[Typography.button, styles.buttonText]}>Entrar</Text>
                 )}
@@ -107,38 +119,39 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: Colors.light.primary },
-  scrollContainer: { flexGrow: 1, justifyContent: "center" },
-  container: { padding: 24 },
-  logo: {
-    width: 180,
-    height: 180,
-    alignSelf: "center",
-    marginBottom: 16,
-    resizeMode: "contain",
-  },
-  subtitle: {
-    marginBottom: 32,
-    textAlign: "center",
-    color: Colors.light.textLight,
-  },
-  input: {
-    backgroundColor: Colors.light.background,
-    borderWidth: 1,
-    borderColor: Colors.light.tabIconDefault,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    color: Colors.light.text,
-  },
-  button: {
-    backgroundColor: Colors.light.secondary,
-    borderRadius: 8,
-    padding: 16,
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  buttonText: { color: Colors.light.textLight },
-  link: { color: Colors.light.textLight, textAlign: "center", marginTop: 8 },
-});
+const createStyles = (theme: AppTheme) =>
+  StyleSheet.create({
+    safeArea: { flex: 1, backgroundColor: theme.colors.primary },
+    scrollContainer: { flexGrow: 1, justifyContent: "center" },
+    container: { padding: 24 },
+    logo: {
+      width: 180,
+      height: 180,
+      alignSelf: "center",
+      marginBottom: 16,
+      resizeMode: "contain",
+    },
+    subtitle: {
+      marginBottom: 32,
+      textAlign: "center",
+      color: theme.colors.textLight,
+    },
+    input: {
+      backgroundColor: theme.colors.background,
+      borderWidth: 1,
+      borderColor: theme.colors.tabIconDefault,
+      borderRadius: 8,
+      padding: 12,
+      marginBottom: 16,
+      color: theme.colors.text,
+    },
+    button: {
+      backgroundColor: theme.colors.secondary,
+      borderRadius: 8,
+      padding: 16,
+      alignItems: "center",
+      marginBottom: 16,
+    },
+    buttonText: { color: theme.colors.textLight },
+    link: { color: theme.colors.textLight, textAlign: "center", marginTop: 8 },
+  });

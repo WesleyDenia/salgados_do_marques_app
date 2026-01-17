@@ -31,52 +31,65 @@ export function useCouponsData({ enabled = true }: UseCouponsOptions = {}) {
     };
   }, []);
 
-  const fetchCoupons = useCallback(async () => {
-    if (!enabled || !mountedRef.current) return;
-    const { data } = await api.get("/coupons");
-    if (!mountedRef.current) return;
-    setCoupons(data.data ?? data);
-  }, [enabled]);
+  const fetchCoupons = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!enabled || !mountedRef.current) return;
+      const { data } = await api.get("/coupons", { signal });
+      if (!mountedRef.current) return;
+      setCoupons(data.data ?? data);
+    },
+    [enabled],
+  );
 
-  const fetchMyCoupons = useCallback(async () => {
-    if (!enabled || !mountedRef.current) return;
-    const { data } = await api.get("/my-coupons");
-    if (!mountedRef.current) return;
+  const fetchMyCoupons = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!enabled || !mountedRef.current) return;
+      const { data } = await api.get("/my-coupons", { signal });
+      if (!mountedRef.current) return;
 
-    const list: UserCoupon[] = data.data ?? data;
-    const map: Record<number, UserCoupon> = {};
+      const list: UserCoupon[] = data.data ?? data;
+      const map: Record<number, UserCoupon> = {};
 
-    list.forEach((uc) => {
-      const id = uc.coupon?.id;
-      if (id != null) {
-        map[id] = uc;
-      }
-    });
+      list.forEach((uc) => {
+        const id = uc.coupon?.id;
+        if (id != null) {
+          map[id] = uc;
+        }
+      });
 
-    setMyCouponsMap(map);
-  }, [enabled]);
+      setMyCouponsMap(map);
+    },
+    [enabled],
+  );
 
   const loadInitialData = useCallback(async () => {
     if (!mountedRef.current || !enabled) return;
+    const controller = new AbortController();
     setLoading(true);
     try {
-      await Promise.all([fetchCoupons(), fetchMyCoupons()]);
+      await Promise.all([fetchCoupons(controller.signal), fetchMyCoupons(controller.signal)]);
     } catch (error) {
-      console.error("Erro ao carregar cupons", error);
+      if ((error as any)?.name !== "AbortError") {
+        console.error("Erro ao carregar cupons", error);
+      }
     } finally {
       if (mountedRef.current) {
         setLoading(false);
       }
     }
+    return () => controller.abort();
   }, [enabled, fetchCoupons, fetchMyCoupons]);
 
   const refresh = useCallback(async () => {
     if (!mountedRef.current || !enabled) return;
+    const controller = new AbortController();
     setRefreshing(true);
     try {
-      await Promise.all([fetchCoupons(), fetchMyCoupons()]);
+      await Promise.all([fetchCoupons(controller.signal), fetchMyCoupons(controller.signal)]);
     } catch (error) {
-      console.error("Erro ao atualizar cupons", error);
+      if ((error as any)?.name !== "AbortError") {
+        console.error("Erro ao atualizar cupons", error);
+      }
     } finally {
       if (mountedRef.current) {
         setRefreshing(false);
@@ -86,7 +99,10 @@ export function useCouponsData({ enabled = true }: UseCouponsOptions = {}) {
 
   useEffect(() => {
     if (enabled) {
-      loadInitialData();
+      const cleanup = loadInitialData();
+      return () => {
+        if (typeof cleanup === "function") cleanup();
+      };
     } else {
       setCoupons([]);
       setMyCouponsMap({});
@@ -114,7 +130,7 @@ export function useCouponsData({ enabled = true }: UseCouponsOptions = {}) {
         }
       }
     },
-    [enabled]
+    [enabled],
   );
 
   const availableCoupons = useMemo(() => {
@@ -126,7 +142,7 @@ export function useCouponsData({ enabled = true }: UseCouponsOptions = {}) {
 
   const isActiveForMe = useCallback(
     (couponId: number) => !!myCouponsMap[couponId]?.active,
-    [myCouponsMap]
+    [myCouponsMap],
   );
 
   return {

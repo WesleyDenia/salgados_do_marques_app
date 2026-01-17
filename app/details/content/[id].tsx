@@ -15,7 +15,6 @@ import { useHomeContent } from "@/hooks/useHomeContent";
 import { useAuth } from "@/context/AuthContext";
 import { resolveAssetUrl } from "@/utils/url";
 import AppHeader from "@/components/AppHeader";
-import { LoyaltyProvider } from "@/context/LoyaltyContext";
 
 const AutoSizedImage = memo(({ uri, style }: { uri: string; style: any }) => {
   const [aspectRatio, setAspectRatio] = useState<number | null>(null);
@@ -92,13 +91,11 @@ export default function ContentDetailScreen() {
   );
 
   return (
-    <LoyaltyProvider>
-      <View style={styles.safeArea}>
-        <StatusBar backgroundColor={theme.colors.primary} barStyle={barStyle} />
-        <AppHeader />
-        {content}
-      </View>
-    </LoyaltyProvider>
+    <View style={styles.safeArea}>
+      <StatusBar backgroundColor={theme.colors.primary} barStyle={barStyle} />
+      <AppHeader />
+      {content}
+    </View>
   );
 }
 

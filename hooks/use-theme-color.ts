@@ -1,21 +1,18 @@
+import { useThemeMode } from "@/context/ThemeContext";
+import { AppTheme } from "@/constants/theme";
+
+type ThemePaletteKey = keyof AppTheme["colors"];
+
 /**
- * Learn more about light and dark modes:
- * https://docs.expo.dev/guides/color-schemes/
+ * Hook de cor padronizado: prioriza overrides (light/dark) e, por padrão,
+ * retorna o valor do ThemeContext para a chave informada.
  */
-
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
 export function useThemeColor(
   props: { light?: string; dark?: string },
-  colorName: keyof typeof Colors.light & keyof typeof Colors.dark
+  colorName: ThemePaletteKey,
 ) {
-  const theme = useColorScheme() ?? 'light';
-  const colorFromProps = props[theme];
+  const { mode, theme } = useThemeMode();
+  const colorFromProps = props[mode];
 
-  if (colorFromProps) {
-    return colorFromProps;
-  } else {
-    return Colors[theme][colorName];
-  }
+  return colorFromProps ?? theme.colors[colorName];
 }

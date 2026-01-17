@@ -12,6 +12,7 @@ import { Appearance } from "react-native";
 import api, { setUnauthorizedHandler } from "@/api/api";
 import { User, AppConfig } from "@/types";
 import { useThemeMode, ThemeMode } from "@/context/ThemeContext";
+import { getToken, setToken, clearToken } from "@/utils/sessionStorage";
 
 type AuthContextType = {
   user: User | null;
@@ -35,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const loadUser = async () => {
       const savedUser = await AsyncStorage.getItem("user");
-      const savedToken = await AsyncStorage.getItem("token");
+      const savedToken = await getToken();
       const savedConfig = await AsyncStorage.getItem("config");
 
       if (savedUser && savedToken) {
@@ -70,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resetSession = useCallback(async () => {
     await AsyncStorage.removeItem("user");
-    await AsyncStorage.removeItem("token");
+    await clearToken();
     await persistConfig(null);
     setUser(null);
     delete api.defaults.headers.Authorization;
@@ -88,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!token || !user) throw new Error("Resposta inválida do backend.");
 
     await AsyncStorage.setItem("user", JSON.stringify(user));
-    await AsyncStorage.setItem("token", token);
+    await setToken(token);
     await persistConfig(configData);
 
     api.defaults.headers.Authorization = `Bearer ${token}`;
@@ -107,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       : null;
 
     await AsyncStorage.setItem("user", JSON.stringify(user));
-    await AsyncStorage.setItem("token", token);
+    await setToken(token);
     await persistConfig(configData);
 
     api.defaults.headers.Authorization = `Bearer ${token}`;

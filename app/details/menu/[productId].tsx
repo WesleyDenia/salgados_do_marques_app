@@ -14,7 +14,6 @@ import Markdown from "react-native-markdown-display";
 
 import { useThemeMode } from "@/context/ThemeContext";
 import AppHeader from "@/components/AppHeader";
-import { LoyaltyProvider } from "@/context/LoyaltyContext";
 
 export default function ProductDetailScreen() {
   const router = useRouter();
@@ -60,38 +59,35 @@ export default function ProductDetailScreen() {
   };
 
   return (
-    <LoyaltyProvider>
-      
-      <View style={[styles.safeArea, { backgroundColor: theme.general.screenBackground }]}>
-        <StatusBar backgroundColor={theme.colors.primary} barStyle={barStyle} />
-        <AppHeader onBack={handleGoBack} />
-        <ScrollView contentContainerStyle={styles.content}>
-          <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-            <Text style={[styles.backText, { color: theme.colors.primary }]}>Voltar</Text>
-          </TouchableOpacity>
+    <View style={[styles.safeArea, { backgroundColor: theme.general.screenBackground }]}>
+      <StatusBar backgroundColor={theme.colors.primary} barStyle={barStyle} />
+      <AppHeader onBack={handleGoBack} />
+      <ScrollView contentContainerStyle={styles.content}>
+        <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
+          <Text style={[styles.backText, { color: theme.colors.primary }]}>Voltar</Text>
+        </TouchableOpacity>
 
-          {params.imageUrl ? (
-            <Image source={{ uri: params.imageUrl }} style={styles.image} resizeMode="cover" />
-          ) : (
-            <View style={[styles.imageFallback, { backgroundColor: theme.colors.disabledBackground }]}>
-              <Text style={[styles.imageFallbackText, { color: theme.colors.textSecondary }]}>
-                Sem imagem
-              </Text>
-            </View>
-          )}
-
-          <Text style={[styles.title, { color: theme.colors.text }]}>{params.name}</Text>
-
-          {description ? (
-            <Markdown style={markdownStyles}>{description}</Markdown>
-          ) : (
-            <Text style={[styles.descriptionFallback, { color: theme.colors.textSecondary }]}>
-              Sem descrição disponível.
+        {params.imageUrl ? (
+          <Image source={{ uri: params.imageUrl }} style={styles.image} resizeMode="cover" />
+        ) : (
+          <View style={[styles.imageFallback, { backgroundColor: theme.colors.disabledBackground }]}>
+            <Text style={[styles.imageFallbackText, { color: theme.colors.textSecondary }]}>
+              Sem imagem
             </Text>
-          )}
-        </ScrollView>
-      </View>
-    </LoyaltyProvider>
+          </View>
+        )}
+
+        <Text style={[styles.title, { color: theme.colors.text }]}>{params.name}</Text>
+
+        {description ? (
+          <Markdown style={markdownStyles}>{description}</Markdown>
+        ) : (
+          <Text style={[styles.descriptionFallback, { color: theme.colors.textSecondary }]}>
+            Sem descrição disponível.
+          </Text>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 

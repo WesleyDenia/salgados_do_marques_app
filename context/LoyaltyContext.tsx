@@ -1,11 +1,33 @@
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useMemo, useCallback } from "react";
 import { useLoyaltyStatus } from "@/hooks/useLoyaltyStatus";
+import api from "@/api/api";
+import { useAuth } from "@/context/AuthContext";
 
-const LoyaltyContext = createContext<ReturnType<typeof useLoyaltyStatus> | null>(null);
+type LoyaltyContextValue = ReturnType<typeof useLoyaltyStatus> & {
+  claimWelcomeBonus: () => Promise<void>;
+};
+
+const LoyaltyContext = createContext<LoyaltyContextValue | null>(null);
 
 export function LoyaltyProvider({ children }: { children: React.ReactNode }) {
   const loyalty = useLoyaltyStatus();
-  return <LoyaltyContext.Provider value={loyalty}>{children}</LoyaltyContext.Provider>;
+  const { updateUser } = useAuth();
+
+  const claimWelcomeBonus = useCallback(async () => {
+    await api.post("/loyalty/welcome-bonus");
+    await loyalty.refetch();
+    await updateUser({ loyalty_synced: true });
+  }, [loyalty, updateUser]);
+
+  const value = useMemo(
+    () => ({
+      ...loyalty,
+      claimWelcomeBonus,
+    }),
+    [claimWelcomeBonus, loyalty],
+  );
+
+  return <LoyaltyContext.Provider value={value}>{children}</LoyaltyContext.Provider>;
 }
 
 export function useLoyalty() {

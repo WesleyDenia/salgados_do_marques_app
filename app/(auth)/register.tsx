@@ -2,7 +2,7 @@ import DateTimePicker, {
   DateTimePickerAndroid,
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -19,21 +19,24 @@ import {
   Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Colors, Typography } from "@/constants/theme";
+import { Typography, AppTheme } from "@/constants/theme";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/api/api";
 import { Calendar } from "lucide-react-native";
 import { getApiErrorMessage } from "@/utils/errorMessage";
+import { useThemeMode } from "@/context/ThemeContext";
 
 export default function RegisterScreen() {
   const router = useRouter();
   const { register } = useAuth();
+  const { theme } = useThemeMode();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [nif, setNif] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phoneDigits, setPhoneDigits] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -144,14 +147,65 @@ export default function RegisterScreen() {
     setShowDatePicker(false);
   }
 
+  const isValidEmail = (value: string) => /\S+@\S+\.\S+/.test(value.trim());
+  const normalizeDigits = (value: string) => value.replace(/\D/g, "");
+
+  function formatPhoneDisplay(digits: string) {
+    const chunks = digits.match(/.{1,3}/g) ?? [];
+    const formatted = chunks.join(" ").trim();
+    return formatted ? `+351 ${formatted}` : "+351 ";
+  }
+
+  function validatePasswordStrength(value: string): string | null {
+    if (value.length < 8) return "A senha deve ter pelo menos 8 caracteres.";
+    if (!/[A-Za-z]/.test(value) || !/[0-9]/.test(value)) {
+      return "Use letras e números para deixar a senha mais forte.";
+    }
+    return null;
+  }
+
   async function handleRegister() {
-    if (!name || !email || !password || !confirm || !phone) {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+    const trimmedConfirm = confirm.trim();
+    const phoneDigitsOnly = normalizeDigits(phoneDigits);
+    const birthDateValue = birthDate.trim();
+
+    if (!trimmedName || !trimmedEmail || !trimmedPassword || !trimmedConfirm || !phoneDigitsOnly) {
       Alert.alert("Campos obrigatórios", "Preencha todos os campos obrigatórios.");
       return;
     }
 
-    if (password !== confirm) {
+    if (!isValidEmail(trimmedEmail)) {
+      Alert.alert("Email inválido", "Informe um email válido para continuar.");
+      return;
+    }
+
+    if (phoneDigitsOnly.length < 9) {
+      Alert.alert("Telefone inválido", "Informe o telefone completo com indicativo.");
+      return;
+    }
+
+    const passwordError = validatePasswordStrength(trimmedPassword);
+    if (passwordError) {
+      Alert.alert("Senha fraca", passwordError);
+      return;
+    }
+
+    if (trimmedPassword !== trimmedConfirm) {
       Alert.alert("Erro", "As senhas não coincidem.");
+      return;
+    }
+
+    if (birthDateValue && birthDateValue.length < 10) {
+      Alert.alert("Data inválida", "Use o formato YYYY-MM-DD para a data de nascimento.");
+      return;
+    }
+
+    const nifDigits = normalizeDigits(nif);
+    if (nifDigits && nifDigits.length !== 9) {
+      Alert.alert("NIF inválido", "O NIF deve ter 9 dígitos.");
       return;
     }
 
@@ -176,13 +230,13 @@ export default function RegisterScreen() {
     try {
       setLoading(true);
       await register({
-        name,
-        email,
-        password,
-        password_confirmation: confirm,
-        nif,
-        phone,
-        birth_date: birthDate || null,
+        name: trimmedName,
+        email: trimmedEmail,
+        password: trimmedPassword,
+        password_confirmation: trimmedConfirm,
+        nif: nifDigits || undefined,
+        phone: `+351${phoneDigitsOnly}`,
+        birth_date: birthDateValue || null,
         lgpd: {
           accepted: true,
           version: lgpdTerms.version,
@@ -194,6 +248,7 @@ export default function RegisterScreen() {
       Alert.alert("🎉 Conta criada!", "Bem-vindo à Salgados do Marquês!");
       router.replace("/");
     } catch (error: any) {
+      console.error("Erro ao registrar", error?.response?.status, error?.response?.data ?? error);
       Alert.alert("Erro", getApiErrorMessage(error, "Falha ao registrar."));
     } finally {
       setLoading(false);
@@ -220,7 +275,7 @@ export default function RegisterScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Nome"
-                placeholderTextColor={Colors.light.textSecondary}
+                placeholderTextColor={theme.colors.textSecondary}
                 value={name}
                 onChangeText={setName}
               />
@@ -228,7 +283,7 @@ export default function RegisterScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Email"
-                placeholderTextColor={Colors.light.textSecondary}
+                placeholderTextColor={theme.colors.textSecondary}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 value={email}
@@ -238,16 +293,20 @@ export default function RegisterScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Telefone"
-                placeholderTextColor={Colors.light.textSecondary}
+                placeholderTextColor={theme.colors.textSecondary}
                 keyboardType="phone-pad"
-                value={phone}
-                onChangeText={setPhone}
+                value={formatPhoneDisplay(phoneDigits)}
+                onChangeText={(text) => {
+                  const digitsOnly = normalizeDigits(text).replace(/^351/, "");
+                  setPhoneDigits(digitsOnly.slice(0, 9));
+                }}
+                textContentType="telephoneNumber"
               />
 
               <TextInput
                 style={styles.input}
                 placeholder="NIF (opcional)"
-                placeholderTextColor={Colors.light.textSecondary}
+                placeholderTextColor={theme.colors.textSecondary}
                 keyboardType="numeric"
                 value={nif}
                 onChangeText={setNif}
@@ -257,7 +316,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={[styles.input, styles.dateInput]}
                   placeholder="Data de nascimento (YYYY-MM-DD)"
-                  placeholderTextColor={Colors.light.textSecondary}
+                  placeholderTextColor={theme.colors.textSecondary}
                   keyboardType="numbers-and-punctuation"
                   value={birthDate}
                   onChangeText={handleBirthDateChange}
@@ -268,14 +327,16 @@ export default function RegisterScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Selecionar data de nascimento no calendário"
                 >
-                  <Calendar color={Colors.light.textSecondary} size={20} />
+                  <Calendar color={theme.colors.textSecondary} size={20} />
                 </TouchableOpacity>
               </View>
 
               <TextInput
                 style={styles.input}
                 placeholder="Senha"
-                placeholderTextColor={Colors.light.textSecondary}
+                placeholderTextColor={theme.colors.textSecondary}
+                autoCapitalize="none"
+                autoCorrect={false}
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
@@ -284,7 +345,9 @@ export default function RegisterScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Confirmar Senha"
-                placeholderTextColor={Colors.light.textSecondary}
+                placeholderTextColor={theme.colors.textSecondary}
+                autoCapitalize="none"
+                autoCorrect={false}
                 secureTextEntry
                 value={confirm}
                 onChangeText={setConfirm}
@@ -314,7 +377,7 @@ export default function RegisterScreen() {
                 </TouchableOpacity>
                 {termsLoading && (
                   <View style={styles.termsFeedback}>
-                    <ActivityIndicator size="small" color={Colors.light.primary} />
+                    <ActivityIndicator size="small" color={theme.colors.primary} />
                     <Text style={styles.feedbackText}>Carregando termo...</Text>
                   </View>
                 )}
@@ -332,7 +395,7 @@ export default function RegisterScreen() {
                 disabled={loading || !lgpdAccepted || termsLoading || !!termsError}
               >
                 {loading ? (
-                  <ActivityIndicator color={Colors.light.background} />
+                  <ActivityIndicator color={theme.colors.textLight} />
                 ) : (
                   <Text style={[Typography.button, styles.buttonText]}>Registrar</Text>
                 )}
@@ -382,119 +445,121 @@ export default function RegisterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: Colors.light.background },
-  scrollContainer: { flexGrow: 1, justifyContent: "center" },
-  container: { padding: 24 },
-  title: { marginBottom: 8, textAlign: "center", color: Colors.light.text },
-  subtitle: { marginBottom: 32, textAlign: "center", color: Colors.light.textSecondary },
-  input: {
-    backgroundColor: Colors.light.background,
-    borderWidth: 1,
-    borderColor: Colors.light.tabIconDefault,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    color: Colors.light.text,
-  },
-  button: {
-    backgroundColor: Colors.light.primary,
-    borderRadius: 8,
-    padding: 16,
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  buttonText: { color: Colors.light.textLight },
-  link: { color: Colors.light.secondary, textAlign: "center" },
-  dateInputContainer: {
-    position: "relative",
-    marginBottom: 16,
-  },
-  dateInput: { marginBottom: 0, paddingRight: 44 },
-  calendarButton: {
-    position: "absolute",
-    right: 12,
-    top: 0,
-    bottom: 0,
-    justifyContent: "center",
-    paddingHorizontal: 4,
-  },
-  termsContainer: { marginTop: 8, marginBottom: 24 },
-  termsError: { color: "#B00020" },
-  checkboxContainer: { flexDirection: "row", alignItems: "center" },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: Colors.light.tabIconDefault,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-    backgroundColor: Colors.light.background,
-  },
-  checkboxChecked: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
-  },
-  checkboxMark: {
-    color: Colors.light.textLight,
-    fontWeight: "bold",
-  },
-  checkboxLabel: { flex: 1, color: Colors.light.textSecondary },
-  linkText: { color: Colors.light.primary, textDecorationLine: "underline" },
-  termsFeedback: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
-  },
-  feedbackText: {
-    color: Colors.light.textSecondary,
-    fontSize: 12,
-    marginLeft: 8,
-  },
-  modalWrapper: {
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  modalOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.4)",
-  },
-  modalContent: {
-    margin: 24,
-    backgroundColor: Colors.light.background,
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
-  },
-  modalTitle: {
-    ...Typography.subtitle,
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  modalActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 12,
-    columnGap: 12,
-  },
-  modalAction: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.light.tabIconDefault,
-    alignItems: "center",
-  },
-  modalActionPrimary: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
-  },
-  modalActionText: { color: Colors.light.text },
-  modalActionPrimaryText: { color: Colors.light.textLight },
-});
+const createStyles = (theme: AppTheme) =>
+  StyleSheet.create({
+    safeArea: { flex: 1, backgroundColor: theme.general.screenBackground },
+    scrollContainer: { flexGrow: 1, justifyContent: "center" },
+    container: { padding: 24 },
+    title: { marginBottom: 8, textAlign: "center", color: theme.colors.text },
+    subtitle: { marginBottom: 32, textAlign: "center", color: theme.colors.textSecondary },
+    input: {
+      backgroundColor: theme.colors.cardBackground,
+      borderWidth: 1,
+      borderColor: theme.colors.tabIconDefault,
+      borderRadius: 8,
+      padding: 12,
+      marginBottom: 16,
+      color: theme.colors.text,
+    },
+    button: {
+      backgroundColor: theme.colors.primary,
+      borderRadius: 8,
+      padding: 16,
+      alignItems: "center",
+      marginBottom: 16,
+    },
+    buttonText: { color: theme.colors.textLight },
+    link: { color: theme.colors.secondary, textAlign: "center" },
+    dateInputContainer: {
+      position: "relative",
+      marginBottom: 16,
+    },
+    dateInput: { marginBottom: 0, paddingRight: 44 },
+    calendarButton: {
+      position: "absolute",
+      right: 12,
+      top: 0,
+      bottom: 0,
+      justifyContent: "center",
+      paddingHorizontal: 4,
+    },
+    termsContainer: { marginTop: 8, marginBottom: 24 },
+    termsError: { color: theme.colors.secondary },
+    checkboxContainer: { flexDirection: "row", alignItems: "center" },
+    checkbox: {
+      width: 22,
+      height: 22,
+      borderRadius: 4,
+      borderWidth: 1,
+      borderColor: theme.colors.tabIconDefault,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 12,
+      backgroundColor: theme.colors.cardBackground,
+    },
+    checkboxChecked: {
+      backgroundColor: theme.colors.primary,
+      borderColor: theme.colors.primary,
+    },
+    checkboxMark: {
+      color: theme.colors.textLight,
+      fontWeight: "bold",
+    },
+    checkboxLabel: { flex: 1, color: theme.colors.textSecondary },
+    linkText: { color: theme.colors.primary, textDecorationLine: "underline" },
+    termsFeedback: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: 8,
+    },
+    feedbackText: {
+      color: theme.colors.textSecondary,
+      fontSize: 12,
+      marginLeft: 8,
+    },
+    modalWrapper: {
+      flex: 1,
+      justifyContent: "flex-end",
+    },
+    modalOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: "rgba(0,0,0,0.4)",
+    },
+    modalContent: {
+      margin: 24,
+      backgroundColor: theme.colors.cardBackground,
+      borderRadius: 16,
+      padding: 16,
+      shadowColor: "#000",
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 6,
+    },
+    modalTitle: {
+      ...Typography.subtitle,
+      textAlign: "center",
+      marginBottom: 8,
+      color: theme.colors.text,
+    },
+    modalActions: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: 12,
+      columnGap: 12,
+    },
+    modalAction: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: theme.colors.tabIconDefault,
+      alignItems: "center",
+    },
+    modalActionPrimary: {
+      backgroundColor: theme.colors.primary,
+      borderColor: theme.colors.primary,
+    },
+    modalActionText: { color: theme.colors.text },
+    modalActionPrimaryText: { color: theme.colors.textLight },
+  });

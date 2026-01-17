@@ -16,7 +16,6 @@ import LoyaltyBanner from "@/components/LoyaltyBanner";
 import { useLoyalty } from "@/context/LoyaltyContext";
 import { useAuth } from "@/context/AuthContext";
 import LottieView from "lottie-react-native";
-import api from "@/api/api";
 import { getApiErrorMessage } from "@/utils/errorMessage";
 import { useThemeMode } from "@/context/ThemeContext";
 import { useHomeContent } from "@/hooks/useHomeContent";
@@ -30,8 +29,8 @@ export default function HomeScreen() {
   const homeTheme = useMemo(() => getHomeTheme(theme), [theme]);
   const styles = useMemo(() => createStyles(theme, homeTheme), [theme, homeTheme]);
   const barStyle = mode === "dark" ? "light-content" : "dark-content";
-  const { data, loading, refetch } = useLoyalty();
-  const { user, updateUser } = useAuth();
+  const { data, loading, refetch, claimWelcomeBonus } = useLoyalty();
+  const { user } = useAuth();
   const {
     blocks: homeContent,
     loading: homeContentLoading,
@@ -40,6 +39,7 @@ export default function HomeScreen() {
   } = useHomeContent();
   const [refreshing, setRefreshing] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [activatingBonus, setActivatingBonus] = useState(false);
   const confettiRef = useRef<LottieView>(null);
   const [couponRefreshKey, setCouponRefreshKey] = useState(0);
   const milestones = data?.milestones ?? [];
@@ -67,24 +67,24 @@ export default function HomeScreen() {
     }
   }, []);
 
-  const finalizeBonusActivation = useCallback(async () => {
+  const handleWelcomeBonus = useCallback(async () => {
     try {
-      await api.post("/loyalty/welcome-bonus");
-      await updateUser({ loyalty_synced: true });
-      await refetch();
+      setActivatingBonus(true);
+      await claimWelcomeBonus();
+      triggerConfetti();
     } catch (error) {
       Alert.alert("Erro", getApiErrorMessage(error, "Não foi possível ativar o bônus agora."));
       console.error(error);
     } finally {
-      setShowConfetti(false);
+      setActivatingBonus(false);
     }
-  }, [refetch, updateUser]);
+  }, [claimWelcomeBonus, triggerConfetti]);
 
   const hasWelcomeComponent = useMemo(
     () =>
       homeContent.some(
-        (block) => block.type === "component" && block.component_name === "WelcomeBonusButton",
-      ),
+    (block) => block.type === "component" && block.component_name === "WelcomeBonusButton",
+  ),
     [homeContent],
   );
 
@@ -103,7 +103,8 @@ export default function HomeScreen() {
           return (
             <WelcomeBonusButton
               {...componentProps}
-              onBonusActivated={triggerConfetti}
+              onActivate={handleWelcomeBonus}
+              loading={activatingBonus}
             />
           );
 
@@ -119,7 +120,7 @@ export default function HomeScreen() {
           return null;
       }
     },
-    [couponRefreshKey, triggerConfetti],
+    [activatingBonus, couponRefreshKey, handleWelcomeBonus, triggerConfetti],
   );
 
   const handleRetryHomeContent = useCallback(() => {
@@ -137,7 +138,7 @@ export default function HomeScreen() {
           source={require("@/assets/animations/success-green.json")}
           autoPlay
           loop={false}
-          onAnimationFinish={finalizeBonusActivation} 
+          onAnimationFinish={() => setShowConfetti(false)}
           style={styles.fullscreenConfetti}
         />
       )}
@@ -162,7 +163,10 @@ export default function HomeScreen() {
 
         {!hasWelcomeComponent ? (
           <View style={styles.componentWrapper}>
-            <WelcomeBonusButton onBonusActivated={triggerConfetti} />
+            <WelcomeBonusButton
+              onActivate={handleWelcomeBonus}
+              loading={activatingBonus}
+            />
           </View>
         ) : null}
 

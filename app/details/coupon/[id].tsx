@@ -5,7 +5,6 @@ import { useThemeMode } from "@/context/ThemeContext";
 import { AppTheme } from "@/constants/theme";
 import { useCoupons } from "@/context/CouponsContext";
 import AppHeader from "@/components/AppHeader";
-import { LoyaltyProvider } from "@/context/LoyaltyContext";
 
 export default function CouponDetailsScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -37,40 +36,38 @@ export default function CouponDetailsScreen() {
   }
 
   return (
-    <LoyaltyProvider>
-      <View style={styles.safeArea}>
-        <StatusBar backgroundColor={theme.colors.primary} barStyle={barStyle} />
-        <AppHeader />
-        <ScrollView contentContainerStyle={styles.container}>
-          <TouchableOpacity style={styles.backButtonInline} onPress={() => router.back()}>
-            <Text style={styles.backButtonTextInline}>Voltar</Text>
-          </TouchableOpacity>
+    <View style={styles.safeArea}>
+      <StatusBar backgroundColor={theme.colors.primary} barStyle={barStyle} />
+      <AppHeader />
+      <ScrollView contentContainerStyle={styles.container}>
+        <TouchableOpacity style={styles.backButtonInline} onPress={() => router.back()}>
+          <Text style={styles.backButtonTextInline}>Voltar</Text>
+        </TouchableOpacity>
 
-          <Text style={styles.title}>{coupon.title}</Text>
+        <Text style={styles.title}>{coupon.title}</Text>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Validade</Text>
-          <Text style={styles.sectionText}>
-            {coupon.ends_at
-              ? `Válido até ${new Date(coupon.ends_at).toLocaleDateString()}`
-              : "Sem data de expiração"}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Código</Text>
-          <Text style={styles.code}>{coupon.code}</Text>
-        </View>
-
-        {coupon.body ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Como usar</Text>
-            <Text style={styles.sectionText}>{coupon.body}</Text>
-          </View>
-        ) : null}
-        </ScrollView>
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Validade</Text>
+        <Text style={styles.sectionText}>
+          {coupon.ends_at
+            ? `Válido até ${new Date(coupon.ends_at).toLocaleDateString()}`
+            : "Sem data de expiração"}
+        </Text>
       </View>
-    </LoyaltyProvider>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Código</Text>
+        <Text style={styles.code}>{coupon.code}</Text>
+      </View>
+
+      {coupon.body ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Como usar</Text>
+          <Text style={styles.sectionText}>{coupon.body}</Text>
+        </View>
+      ) : null}
+      </ScrollView>
+    </View>
   );
 }
 

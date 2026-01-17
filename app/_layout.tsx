@@ -6,6 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ThemeProvider, useThemeMode } from "@/context/ThemeContext";
 import { CouponsProvider } from "@/context/CouponsContext";
+import { LoyaltyProvider } from "@/context/LoyaltyContext";
 import * as NavigationBar from "expo-navigation-bar";
 
 function AuthGuard() {
@@ -61,9 +62,11 @@ export default function RootLayout() {
     <ThemeProvider>
       <SafeAreaProvider>
         <AuthProvider>
-          <CouponsProvider>
-            <ThemedApp />
-          </CouponsProvider>
+          <LoyaltyProvider>
+            <CouponsProvider>
+              <ThemedApp />
+            </CouponsProvider>
+          </LoyaltyProvider>
         </AuthProvider>
       </SafeAreaProvider>
     </ThemeProvider>
@@ -76,8 +79,10 @@ function ThemedApp() {
   useEffect(() => {
     if (Platform.OS !== "android") return;
 
-    void NavigationBar.setBackgroundColorAsync(theme.general.screenBackground);
-    void NavigationBar.setButtonStyleAsync(mode === "dark" ? "light" : "dark");
+    const buttonStyle = mode === "dark" ? "light" : "dark";
+    // Edge-to-edge habilitado no Android ignora background; evitamos warning com try/catch.
+    NavigationBar.setButtonStyleAsync(buttonStyle).catch(() => {});
+    NavigationBar.setBackgroundColorAsync(theme.general.screenBackground).catch(() => {});
   }, [mode, theme.general.screenBackground]);
 
   return (

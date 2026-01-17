@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -7,9 +7,11 @@ import {
   Text,
   TouchableOpacity,
   View,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 
 import api from "@/api/api";
 import { useThemeMode } from "@/context/ThemeContext";
@@ -33,23 +35,41 @@ export default function MenuScreen() {
 
   const [rawProducts, setRawProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const loadProducts = useCallback(async () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      setLoading(true);
+      const { data } = await api.get("/products", { signal: controller.signal });
+      const list = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+      setRawProducts(list);
+    } catch (error: any) {
+      if (error?.name === "AbortError") return;
+      console.error("Erro ao carregar produtos", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
-    async function loadProducts() {
-      try {
-        const { data } = await api.get("/products");
-        const list = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+    void loadProducts();
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, [loadProducts]);
 
-        setRawProducts(list);
-      } catch (error) {
-        console.error("Erro ao carregar produtos", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadProducts();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      void loadProducts();
+      return () => abortRef.current?.abort();
+    }, [loadProducts])
+  );
 
   const products = useMemo<MenuProduct[]>(() => {
     return rawProducts.map((item: any) => {
@@ -116,6 +136,17 @@ export default function MenuScreen() {
           keyExtractor={(item) => String(item.id)}
           stickySectionHeadersEnabled={false}
           contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                setRefreshing(true);
+                void loadProducts();
+              }}
+              colors={[theme.colors.primary]}
+              tintColor={theme.colors.primary}
+            />
+          }
           SectionSeparatorComponent={() => <View style={styles.sectionSeparator} />}
           renderSectionHeader={({ section }) => (
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{section.title}</Text>
