@@ -17,6 +17,8 @@ import api from "@/api/api";
 import { useThemeMode } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import { resolveAssetUrl } from "@/utils/url";
+import { useCart } from "@/context/CartContext";
+import { getLoyaltyBannerTheme } from "@/constants/themeLoyalty";
 
 type MenuProduct = {
   id: number;
@@ -32,6 +34,8 @@ export default function MenuScreen() {
   const router = useRouter();
   const { theme } = useThemeMode();
   const { config } = useAuth();
+  const { items, total } = useCart();
+  const bannerTheme = useMemo(() => getLoyaltyBannerTheme(theme), [theme]);
 
   const [rawProducts, setRawProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +53,7 @@ export default function MenuScreen() {
       const list = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
       setRawProducts(list);
     } catch (error: any) {
-      if (error?.name === "AbortError") return;
+      if (error?.name === "AbortError" || error?.name === "CanceledError") return;
       console.error("Erro ao carregar produtos", error);
     } finally {
       setLoading(false);
@@ -117,14 +121,46 @@ export default function MenuScreen() {
       });
   }, [products]);
 
+  const itemCount = useMemo(
+    () => items.reduce((sum, item) => sum + item.quantity, 0),
+    [items]
+  );
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.general.screenBackground }]}>
+      <TouchableOpacity
+        style={[
+          styles.cartSummary,
+          { backgroundColor: bannerTheme.backgroundColor },
+          itemCount === 0 && styles.cartSummaryDisabled,
+        ]}
+        onPress={() => router.push("/(tabs)/orders")}
+        disabled={itemCount === 0}
+      >
+        <View>
+          <Text style={[styles.cartTitle, { color: theme.colors.textLight }]}>Sua encomenda</Text>
+          <Text style={[styles.cartSubtitle, { color: theme.colors.textLight }]}>
+            {itemCount > 0
+              ? `${itemCount} item${itemCount > 1 ? "s" : ""} no carrinho`
+              : "Nenhum item adicionado"}
+          </Text>
+        </View>
+        <Text style={[styles.cartTotal, { color: theme.colors.textLight }]}>
+          {Number(total ?? 0).toLocaleString("pt-PT", {
+            style: "currency",
+            currency: "EUR",
+            minimumFractionDigits: 2,
+          })}
+        </Text>
+      </TouchableOpacity>
+
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme.colors.text }]}>Cardápio</Text>
         <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
           Escolha seu salgado favorito e descubra novos sabores!
-        </Text>
+        </Text>        
       </View>
+      
 
       {loading ? (
         <View style={styles.loader}>
@@ -166,9 +202,6 @@ export default function MenuScreen() {
                   pathname: "/details/menu/[productId]",
                   params: {
                     productId: String(item.id),
-                    name: item.name,
-                    description: item.description ?? "",
-                    imageUrl: item.imageUrl ?? "",
                   },
                 })
               }
@@ -211,7 +244,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   header: {
     paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingBottom: 8,
   },
   title: {
     fontSize: 24,
@@ -220,6 +253,31 @@ const styles = StyleSheet.create({
   subtitle: {
     marginVertical: 10,
     fontSize: 14,
+  },
+  cartSummary: {
+    width: "100%",
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 15,
+    marginTop: -35,
+  },
+  cartSummaryDisabled: {
+    opacity: 0.6,
+  },
+  cartTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  cartSubtitle: {
+    marginTop: 2,
+    fontSize: 14,
+  },
+  cartTotal: {
+    fontSize: 16,
+    fontWeight: "800",
   },
   loader: {
     flex: 1,

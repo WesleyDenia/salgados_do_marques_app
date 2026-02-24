@@ -3,7 +3,14 @@ import { Tabs } from "expo-router";
 import React from "react";
 import { HapticTab } from "@/components/haptic-tab";
 import { useThemeMode } from "@/context/ThemeContext";
-import { Home, TicketPercent, UtensilsCrossed, Star, User, MapPin } from "lucide-react-native";
+import {
+  Home,
+  TicketPercent,
+  UtensilsCrossed,
+  Star,
+  MapPin,
+  ShoppingBag,
+} from "lucide-react-native";
 import AppHeader from "@/components/AppHeader";
 
 export default function TabLayout() {
@@ -49,6 +56,14 @@ export default function TabLayout() {
         />
 
         <Tabs.Screen
+          name="orders"
+          options={{
+            title: "Encomendas",
+            tabBarIcon: ({ color }) => <ShoppingBag size={24} color={color} />,
+          }}
+        />
+
+        <Tabs.Screen
           name="stores"
           options={{
             title: "Lojas",
@@ -67,8 +82,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="profile"
           options={{
-            title: "Perfil",
-            tabBarIcon: ({ color }) => <User size={24} color={color} />,
+            href: null,
           }}
         />
       </Tabs>

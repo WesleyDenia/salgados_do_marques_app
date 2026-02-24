@@ -1,5 +1,7 @@
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -14,22 +16,31 @@ import Markdown from "react-native-markdown-display";
 
 import { useThemeMode } from "@/context/ThemeContext";
 import AppHeader from "@/components/AppHeader";
+import QuantitySelector from "@/components/QuantitySelector";
+import { useCart } from "@/context/CartContext";
+import api from "@/api/api";
+import { Flavor, Product, ProductVariant } from "@/types";
+import { useAuth } from "@/context/AuthContext";
+import { resolveAssetUrl } from "@/utils/url";
 
 export default function ProductDetailScreen() {
   const router = useRouter();
   const { theme, mode } = useThemeMode();
-  const params = useLocalSearchParams<{
-    productId?: string;
-    name?: string;
-    description?: string;
-    imageUrl?: string;
-  }>();
+  const { addItem } = useCart();
+  const { config } = useAuth();
+  const params = useLocalSearchParams<{ productId?: string }>();
+  const [quantity, setQuantity] = useState(1);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [flavors, setFlavors] = useState<Flavor[]>([]);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [flavorCounts, setFlavorCounts] = useState<Record<number, number>>({});
 
   const description = useMemo(() => {
-    const raw = params.description ?? "";
+    const raw = product?.description ?? "";
     if (!raw || raw === "null" || !raw.trim()) return null;
     return raw.replace(/\r\n/g, "\n\n").trim();
-  }, [params.description]);
+  }, [product?.description]);
   const barStyle = mode === "dark" ? "light-content" : "dark-content";
   const markdownStyles = useMemo(
     () =>
@@ -58,32 +69,236 @@ export default function ProductDetailScreen() {
     router.replace("/(tabs)/menu");
   };
 
+  const resolvedImageUrl = useMemo(() => {
+    if (!product?.image_url) return null;
+    return resolveAssetUrl(product.image_url, config?.assets_base_url) ?? product.image_url;
+  }, [product?.image_url, config?.assets_base_url]);
+
+  const loadProduct = useCallback(async () => {
+    if (!params.productId) return;
+    try {
+      setLoading(true);
+      const [productResponse, flavorsResponse] = await Promise.all([
+        api.get<{ data: Product }>(`/products/${params.productId}`),
+        api.get<{ data: Flavor[] }>("/flavors"),
+      ]);
+      const loadedProduct = productResponse.data.data ?? productResponse.data;
+      const loadedFlavors = Array.isArray(flavorsResponse.data?.data)
+        ? flavorsResponse.data.data
+        : Array.isArray(flavorsResponse.data)
+          ? flavorsResponse.data
+          : [];
+      setProduct(loadedProduct);
+      setFlavors(loadedFlavors);
+
+      const variants = Array.isArray(loadedProduct?.variants)
+        ? [...loadedProduct.variants].filter((variant) => variant.active)
+        : [];
+      variants.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+      setSelectedVariant(variants[0] ?? null);
+    } catch (error) {
+      console.error("Erro ao carregar produto", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [params.productId]);
+
+  useEffect(() => {
+    void loadProduct();
+  }, [loadProduct]);
+
+  const maxFlavors = selectedVariant?.max_flavors ?? 0;
+  const totalFlavorCount = useMemo(
+    () => Object.values(flavorCounts).reduce((sum, value) => sum + value, 0),
+    [flavorCounts]
+  );
+
+  const handleFlavorChange = useCallback(
+    (flavorId: number, nextValue: number) => {
+      if (!selectedVariant) return;
+      const safeValue = Math.max(0, Math.min(maxFlavors, nextValue));
+      const current = flavorCounts[flavorId] ?? 0;
+      const nextTotal = totalFlavorCount - current + safeValue;
+      if (nextTotal > maxFlavors) return;
+      setFlavorCounts((prev) => ({ ...prev, [flavorId]: safeValue }));
+    },
+    [flavorCounts, maxFlavors, selectedVariant, totalFlavorCount]
+  );
+
+  const handleAddToCart = () => {
+    if (!product) return;
+
+    if (product.variants && product.variants.length > 0) {
+      if (!selectedVariant) return;
+      if (maxFlavors > 0 && totalFlavorCount === 0) {
+        return;
+      }
+    }
+
+    const selectedFlavors = flavors
+      .map((flavor) => ({
+        id: flavor.id,
+        name: flavor.name,
+        quantity: flavorCounts[flavor.id] ?? 0,
+      }))
+      .filter((flavor) => flavor.quantity > 0);
+
+    addItem(product, {
+      quantity,
+      unitPrice: selectedVariant?.price ?? product.price,
+      variant: selectedVariant,
+      flavors: selectedFlavors,
+    });
+    Alert.alert("Encomenda atualizada", "Deseja concluir a encomenda agora?", [
+      {
+        text: "Continuar",
+        style: "cancel",
+        onPress: () => {
+          router.replace("/(tabs)/menu");
+        },
+      },
+      {
+        text: "Concluir",
+        onPress: () => {
+          router.replace("/(tabs)/orders");
+        },
+      },
+    ]);
+  };
+
   return (
     <View style={[styles.safeArea, { backgroundColor: theme.general.screenBackground }]}>
       <StatusBar backgroundColor={theme.colors.primary} barStyle={barStyle} />
       <AppHeader onBack={handleGoBack} />
-      <ScrollView contentContainerStyle={styles.content}>
-        <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-          <Text style={[styles.backText, { color: theme.colors.primary }]}>Voltar</Text>
-        </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.content}>        
 
-        {params.imageUrl ? (
-          <Image source={{ uri: params.imageUrl }} style={styles.image} resizeMode="cover" />
-        ) : (
-          <View style={[styles.imageFallback, { backgroundColor: theme.colors.disabledBackground }]}>
-            <Text style={[styles.imageFallbackText, { color: theme.colors.textSecondary }]}>
-              Sem imagem
-            </Text>
+        {loading ? (
+          <View style={styles.loader}>
+            <ActivityIndicator size="large" color={theme.colors.primary} />
           </View>
-        )}
+        ) : product ? (
+          <>
+            {resolvedImageUrl ? (
+              <Image source={{ uri: resolvedImageUrl }} style={styles.image} resizeMode="cover" />
+            ) : (
+              <View style={[styles.imageFallback, { backgroundColor: theme.colors.disabledBackground }]}>
+                <Text style={[styles.imageFallbackText, { color: theme.colors.textSecondary }]}>
+                  Sem imagem
+                </Text>
+              </View>
+            )}
 
-        <Text style={[styles.title, { color: theme.colors.text }]}>{params.name}</Text>
+            <Text style={[styles.title, { color: theme.colors.text }]}>{product.name}</Text>
 
-        {description ? (
-          <Markdown style={markdownStyles}>{description}</Markdown>
+            {description ? (
+              <Markdown style={markdownStyles}>{description}</Markdown>
+            ) : (
+              <Text style={[styles.descriptionFallback, { color: theme.colors.textSecondary }]}>
+                Sem descrição disponível.
+              </Text>
+            )}
+
+            {product.variants && product.variants.length > 0 ? (
+              <View style={styles.variantSection}>
+                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                  Escolha o pack
+                </Text>
+                <View style={styles.variantList}>
+                  {product.variants
+                    .filter((variant) => variant.active)
+                    .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+                    .map((variant) => {
+                      const active = selectedVariant?.id === variant.id;
+                      return (
+                        <TouchableOpacity
+                          key={variant.id}
+                          style={[
+                            styles.variantButton,
+                            {
+                              borderColor: active ? theme.colors.primary : theme.colors.border,
+                              backgroundColor: active ? theme.colors.primary : theme.general.surface,
+                            },
+                          ]}
+                          onPress={() => {
+                            setSelectedVariant(variant);
+                            setFlavorCounts({});
+                          }}
+                        >
+                          <Text
+                            style={[
+                              styles.variantText,
+                              { color: active ? theme.colors.textLight : theme.colors.text },
+                            ]}
+                          >
+                            {variant.name} • {variant.unit_count} un
+                          </Text>
+                          <Text
+                            style={[
+                              styles.variantPrice,
+                              { color: active ? theme.colors.textLight : theme.colors.textSecondary },
+                            ]}
+                          >
+                            {variant.price.toLocaleString("pt-PT", {
+                              style: "currency",
+                              currency: "EUR",
+                              minimumFractionDigits: 2,
+                            })}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                </View>
+              </View>
+            ) : null}
+
+            {selectedVariant && maxFlavors > 0 ? (
+              <View style={styles.flavorSection}>
+                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                  Escolha os sabores (até {maxFlavors})
+                </Text>
+                <Text style={[styles.helperText, { color: theme.colors.textSecondary }]}>
+                  Selecionados: {totalFlavorCount} de {maxFlavors}
+                </Text>
+                <View style={styles.flavorList}>
+                  {flavors.map((flavor) => (
+                    <View key={flavor.id} style={styles.flavorRow}>
+                      <Text style={[styles.flavorName, { color: theme.colors.text }]}>
+                        {flavor.name}
+                      </Text>
+                      <QuantitySelector
+                        value={flavorCounts[flavor.id] ?? 0}
+                        min={0}
+                        max={maxFlavors}
+                        onChange={(value) => handleFlavorChange(flavor.id, value)}
+                        theme={theme}
+                      />
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ) : null}
+
+            <View style={styles.cartSection}>
+              <QuantitySelector
+                value={quantity}
+                min={1}
+                max={99}
+                onChange={setQuantity}
+                theme={theme}
+              />
+              <TouchableOpacity
+                style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
+                onPress={handleAddToCart}
+              >
+                <Text style={[styles.addButtonText, { color: theme.colors.textLight }]}>
+                  Adicionar à encomenda
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </>
         ) : (
           <Text style={[styles.descriptionFallback, { color: theme.colors.textSecondary }]}>
-            Sem descrição disponível.
+            Produto não encontrado.
           </Text>
         )}
       </ScrollView>
@@ -96,6 +311,10 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
     paddingBottom: 40,
+  },
+  loader: {
+    paddingVertical: 40,
+    alignItems: "center",
   },
   backButton: {
     marginBottom: 12,
@@ -127,8 +346,70 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 12,
   },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
   descriptionFallback: {
     fontSize: 16,
     lineHeight: 22,
+  },
+  cartSection: {
+    marginTop: 24,
+    gap: 16,
+  },
+  variantSection: {
+    marginTop: 16,
+    gap: 12,
+  },
+  variantList: {
+    gap: 10,
+  },
+  variantButton: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+  },
+  variantText: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  variantPrice: {
+    marginTop: 6,
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  flavorSection: {
+    marginTop: 20,
+    gap: 10,
+  },
+  helperText: {
+    fontSize: 12,
+  },
+  flavorList: {
+    gap: 12,
+  },
+  flavorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  flavorName: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  addButton: {
+    backgroundColor: "#111827",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  addButtonText: {
+    color: "#ffffff",
+    fontWeight: "700",
+    fontSize: 16,
   },
 });

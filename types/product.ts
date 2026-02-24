@@ -12,5 +12,16 @@ export interface Product {
     name: string | null;
     order?: number | null;
   } | null;
+  variants?: ProductVariant[];
   active?: boolean;
+}
+
+export interface ProductVariant {
+  id: number;
+  name: string;
+  unit_count: number;
+  max_flavors: number;
+  price: number;
+  active: boolean;
+  display_order: number;
 }

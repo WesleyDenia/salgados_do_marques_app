@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ThemeProvider, useThemeMode } from "@/context/ThemeContext";
 import { CouponsProvider } from "@/context/CouponsContext";
 import { LoyaltyProvider } from "@/context/LoyaltyContext";
+import { CartProvider } from "@/context/CartContext";
 import * as NavigationBar from "expo-navigation-bar";
 
 function AuthGuard() {
@@ -64,7 +65,9 @@ export default function RootLayout() {
         <AuthProvider>
           <LoyaltyProvider>
             <CouponsProvider>
-              <ThemedApp />
+              <CartProvider>
+                <ThemedApp />
+              </CartProvider>
             </CouponsProvider>
           </LoyaltyProvider>
         </AuthProvider>

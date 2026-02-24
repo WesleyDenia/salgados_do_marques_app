@@ -9,7 +9,7 @@ const palette = {
     secondary: "#4e0101ff",
     background: "#edebf4ff",
     backgroundButton: "#fff0e6",
-    cardBackground: "#ffffff",
+    cardBackground: "#ffffffff",
     surface: "#ffffff",    
     text: "#2a2a2a",
     textSecondary: "#7a7a7a",

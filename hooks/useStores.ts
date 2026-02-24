@@ -8,6 +8,7 @@ type StoreQuery = {
   type?: "principal" | "revenda";
   lat?: number;
   lng?: number;
+  accepts_orders?: boolean;
 };
 
 type UseStoresResult = {
@@ -31,12 +32,21 @@ export function useStores(): UseStoresResult {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await api.get("/stores", { params, signal: controller.signal });
+      const normalizedParams: StoreQuery = {
+        ...params,
+        accepts_orders:
+          typeof params.accepts_orders === "boolean"
+            ? params.accepts_orders
+              ? 1
+              : 0
+            : params.accepts_orders,
+      };
+      const { data } = await api.get("/stores", { params: normalizedParams, signal: controller.signal });
       const list = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
       setStores(list);
     } catch (err: any) {
       if (err?.name === "AbortError" || err?.name === "CanceledError") return;
-      console.error("Erro ao carregar lojas:", err);
+      console.error("Erro ao carregar lojas:", err?.response?.status, err?.response?.data ?? err);
       setError("Não foi possível carregar as lojas.");
     } finally {
       setLoading(false);

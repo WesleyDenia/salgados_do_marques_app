@@ -9,5 +9,7 @@ export type Store = {
   longitude: number;
   phone: string | null;
   type: StoreType;
+  accepts_orders?: boolean;
+  default_store?: boolean;
   distance_km?: number;
 };
