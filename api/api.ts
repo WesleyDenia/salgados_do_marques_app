@@ -86,27 +86,37 @@ async function refreshToken(): Promise<string | null> {
   return refreshRequest;
 }
 
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const status = error.response?.status;
-    const originalRequest = (error.config ?? {}) as RetryableRequestConfig;
+export async function handleApiResponseError(error: any) {
+  const status = error.response?.status;
+  const originalRequest = (error.config ?? {}) as RetryableRequestConfig;
 
-    if (status === 401 && !originalRequest?._retry) {
-      originalRequest._retry = true;
-      const newToken = await refreshToken();
-      if (newToken) {
-        originalRequest.headers = originalRequest.headers ?? {};
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        return api(originalRequest);
-      }
+  if (status === 401 && !originalRequest?._retry) {
+    originalRequest._retry = true;
+    const newToken = await refreshToken();
+    if (newToken) {
+      originalRequest.headers = originalRequest.headers ?? {};
+      originalRequest.headers.Authorization = `Bearer ${newToken}`;
+      return api(originalRequest);
     }
-
-    if (status === 401) {
-      await notifyUnauthorized();
-    }
-    return Promise.reject(error);
   }
-);
+
+  if (status === 401) {
+    await notifyUnauthorized();
+  }
+  return Promise.reject(error);
+}
+
+api.interceptors.response.use((response) => response, handleApiResponseError);
+
+export const __apiTestUtils = {
+  notifyUnauthorized,
+  refreshToken,
+  resetInternalState() {
+    unauthorizedHandler = null;
+    unauthorizedHandling = null;
+    refreshRequest = null;
+    delete api.defaults.headers.Authorization;
+  },
+};
 
 export default api;

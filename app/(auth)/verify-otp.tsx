@@ -4,14 +4,14 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import styled from "styled-components/native";
+import styledNative from "styled-components/native";
 
 import { useVerifyOtp } from "@/hooks/useVerifyOtp";
 import { useThemeMode } from "@/context/ThemeContext";
 import { getApiErrorMessage } from "@/utils/errorMessage";
 import AuthScreenLayout from "@/components/auth/AuthScreenLayout";
 
-const Input = styled.TextInput`
+const Input = styledNative.TextInput`
   border-width: 1px;
   border-color: ${({ theme }) => theme.general.borderColor};
   border-radius: ${({ theme }) => theme.radius.md}px;
@@ -21,13 +21,13 @@ const Input = styled.TextInput`
   background-color: ${({ theme }) => theme.colors.cardBackground};
 `;
 
-const OtpInput = styled(Input)`
+const OtpInput = styledNative(Input)`
   text-align: center;
   font-size: 22px;
   letter-spacing: 6px;
 `;
 
-const SubmitButton = styled.TouchableOpacity<{ disabled?: boolean }>`
+const SubmitButton = styledNative.TouchableOpacity<{ disabled?: boolean }>`
   margin-top: ${({ theme }) => theme.spacing.lg}px;
   padding: ${({ theme }) => theme.spacing.lg}px;
   border-radius: ${({ theme }) => theme.radius.md}px;
@@ -37,20 +37,20 @@ const SubmitButton = styled.TouchableOpacity<{ disabled?: boolean }>`
     disabled ? theme.colors.disabledBackground : theme.colors.primary};
 `;
 
-const SubmitText = styled.Text`
+const SubmitText = styledNative.Text`
   font-size: 16px;
   font-weight: 600;
   color: ${({ theme }) => theme.colors.textLight};
 `;
 
-const ErrorText = styled.Text`
+const ErrorText = styledNative.Text`
   margin-top: ${({ theme }) => theme.spacing.lg}px;
   text-align: center;
   color: ${({ theme }) => theme.colors.secondary};
   font-size: 14px;
 `;
 
-const HelperText = styled.Text`
+const HelperText = styledNative.Text`
   margin-top: ${({ theme }) => theme.spacing.xs}px;
   margin-bottom: ${({ theme }) => theme.spacing.lg}px;
   text-align: center;
@@ -59,7 +59,7 @@ const HelperText = styled.Text`
   line-height: 18px;
 `;
 
-const StepCallout = styled.View`
+const StepCallout = styledNative.View`
   margin-bottom: ${({ theme }) => theme.spacing.lg}px;
   padding: ${({ theme }) => theme.spacing.md}px;
   border-radius: ${({ theme }) => theme.radius.md}px;
@@ -68,20 +68,20 @@ const StepCallout = styled.View`
   background-color: ${({ theme }) => theme.general.surface};
 `;
 
-const StepCalloutTitle = styled.Text`
+const StepCalloutTitle = styledNative.Text`
   font-size: 14px;
   font-weight: 700;
   color: ${({ theme }) => theme.colors.text};
   margin-bottom: ${({ theme }) => theme.spacing.xs}px;
 `;
 
-const StepCalloutText = styled.Text`
+const StepCalloutText = styledNative.Text`
   font-size: 13px;
   line-height: 18px;
   color: ${({ theme }) => theme.colors.textSecondary};
 `;
 
-const SecondaryLink = styled.Text`
+const SecondaryLink = styledNative.Text`
   margin-top: ${({ theme }) => theme.spacing.xl}px;
   text-align: center;
   color: ${({ theme }) => theme.colors.secondary};

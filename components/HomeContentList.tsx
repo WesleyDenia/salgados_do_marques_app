@@ -56,6 +56,7 @@ const AutoSizedImage = memo(({ uri, style, fallbackHeight }: AutoSizedImageProps
 
   return <Image source={{ uri }} style={computedStyle} resizeMode="cover" />;
 });
+AutoSizedImage.displayName = "HomeContentAutoSizedImage";
 
 function HomeContentListComponent({ blocks, renderComponent }: HomeContentListProps) {
   const { theme } = useThemeMode();
@@ -267,4 +268,5 @@ const createStyles = (theme: AppTheme) =>
   });
 
 const HomeContentList = memo(HomeContentListComponent);
+HomeContentList.displayName = "HomeContentList";
 export default HomeContentList;

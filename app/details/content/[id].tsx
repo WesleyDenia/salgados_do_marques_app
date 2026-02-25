@@ -46,6 +46,7 @@ const AutoSizedImage = memo(({ uri, style }: { uri: string; style: any }) => {
 
   return <Image source={{ uri }} style={computedStyle} resizeMode="cover" />;
 });
+AutoSizedImage.displayName = "AutoSizedImage";
 
 export default function ContentDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();

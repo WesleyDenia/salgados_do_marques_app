@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { Typography, AppTheme } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "expo-router";
-import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity } from "react-native";
 import { getApiErrorMessage } from "@/utils/errorMessage";
 import { useThemeMode } from "@/context/ThemeContext";
 import AuthScreenLayout from "@/components/auth/AuthScreenLayout";

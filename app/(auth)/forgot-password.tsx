@@ -5,20 +5,20 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
-import styled from "styled-components/native";
+import styledNative from "styled-components/native";
 
 import { useForgotPassword } from "@/hooks/useForgotPassword";
 import { useThemeMode } from "@/context/ThemeContext";
 import { getApiErrorMessage } from "@/utils/errorMessage";
 import AuthScreenLayout from "@/components/auth/AuthScreenLayout";
 
-const ToggleGroup = styled.View`
+const ToggleGroup = styledNative.View`
   flex-direction: row;
   gap: ${({ theme }) => theme.spacing.sm}px;
   margin-bottom: ${({ theme }) => theme.spacing.xl}px;
 `;
 
-const MethodButton = styled.TouchableOpacity<{ active: boolean }>`
+const MethodButton = styledNative.TouchableOpacity<{ active: boolean }>`
   flex: 1;
   padding: ${({ theme }) => theme.spacing.lg}px;
   border-radius: ${({ theme }) => theme.radius.md}px;
@@ -29,14 +29,14 @@ const MethodButton = styled.TouchableOpacity<{ active: boolean }>`
     active ? theme.colors.primary : theme.colors.backgroundButton};
 `;
 
-const MethodButtonText = styled.Text<{ active: boolean }>`
+const MethodButtonText = styledNative.Text<{ active: boolean }>`
   text-align: center;
   font-size: 15px;
   font-weight: 600;
   color: ${({ theme, active }) => (active ? theme.colors.textLight : theme.colors.textSecondary)};
 `;
 
-const Input = styled.TextInput`
+const Input = styledNative.TextInput`
   border-width: 1px;
   border-color: ${({ theme }) => theme.general.borderColor};
   border-radius: ${({ theme }) => theme.radius.md}px;
@@ -46,7 +46,7 @@ const Input = styled.TextInput`
   background-color: ${({ theme }) => theme.colors.cardBackground};
 `;
 
-const InputRow = styled.View`
+const InputRow = styledNative.View`
   flex-direction: row;
   align-items: center;
   border-width: 1px;
@@ -56,33 +56,33 @@ const InputRow = styled.View`
   background-color: ${({ theme }) => theme.colors.cardBackground};
 `;
 
-const Prefix = styled.Text`
+const Prefix = styledNative.Text`
   padding-left: ${({ theme }) => theme.spacing.lg}px;
   color: ${({ theme }) => theme.colors.textSecondary};
   font-size: 15px;
   font-weight: 600;
 `;
 
-const PhoneInput = styled.TextInput`
+const PhoneInput = styledNative.TextInput`
   flex: 1;
   padding: ${({ theme }) => theme.spacing.lg}px;
   color: ${({ theme }) => theme.colors.text};
 `;
 
-const HelperText = styled.Text`
+const HelperText = styledNative.Text`
   font-size: 14px;
   color: ${({ theme }) => theme.colors.textSecondary};
   margin-bottom: ${({ theme }) => theme.spacing.lg}px;
 `;
 
-const FeedbackText = styled.Text<{ success?: boolean }>`
+const FeedbackText = styledNative.Text<{ success?: boolean }>`
   font-size: 14px;
   color: ${({ theme, success }) => (success ? theme.colors.accentSuccess : theme.colors.secondary)};
   margin-top: ${({ theme }) => theme.spacing.sm}px;
   text-align: center;
 `;
 
-const SecondaryLink = styled.Text`
+const SecondaryLink = styledNative.Text`
   margin-top: ${({ theme }) => theme.spacing.xl}px;
   text-align: center;
   color: ${({ theme }) => theme.colors.secondary};
@@ -90,7 +90,7 @@ const SecondaryLink = styled.Text`
   font-weight: 600;
 `;
 
-const SubmitButton = styled.TouchableOpacity<{ disabled?: boolean }>`
+const SubmitButton = styledNative.TouchableOpacity<{ disabled?: boolean }>`
   margin-top: ${({ theme }) => theme.spacing.md}px;
   padding: ${({ theme }) => theme.spacing.lg}px;
   border-radius: ${({ theme }) => theme.radius.md}px;
@@ -100,7 +100,7 @@ const SubmitButton = styled.TouchableOpacity<{ disabled?: boolean }>`
     disabled ? theme.colors.disabledBackground : theme.colors.primary};
 `;
 
-const SubmitText = styled.Text`
+const SubmitText = styledNative.Text`
   font-size: 16px;
   font-weight: 600;
   color: ${({ theme }) => theme.colors.textLight};
@@ -157,13 +157,7 @@ export default function ForgotPasswordScreen() {
 
     try {
       setFieldError(null);
-      const response = await send({ method, identifier: trimmed });
-
-      const message =
-        response?.message ??
-        (method === "whatsapp"
-          ? "Código enviado via WhatsApp."
-          : "Verifique seu e-mail para continuar.");
+      await send({ method, identifier: trimmed });
 
       if (method === "whatsapp") {
         router.push({

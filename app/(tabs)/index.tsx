@@ -14,7 +14,6 @@ import { AppTheme } from "@/constants/theme";
 import { getHomeTheme, HomeTheme } from "@/constants/themeHome";
 import LoyaltyBanner from "@/components/LoyaltyBanner";
 import { useLoyalty } from "@/context/LoyaltyContext";
-import { useAuth } from "@/context/AuthContext";
 import LottieView from "lottie-react-native";
 import { getApiErrorMessage } from "@/utils/errorMessage";
 import { useThemeMode } from "@/context/ThemeContext";
@@ -30,7 +29,6 @@ export default function HomeScreen() {
   const styles = useMemo(() => createStyles(theme, homeTheme), [theme, homeTheme]);
   const barStyle = mode === "dark" ? "light-content" : "dark-content";
   const { data, loading, refetch, claimWelcomeBonus } = useLoyalty();
-  const { user } = useAuth();
   const {
     blocks: homeContent,
     loading: homeContentLoading,
@@ -120,7 +118,7 @@ export default function HomeScreen() {
           return null;
       }
     },
-    [activatingBonus, couponRefreshKey, handleWelcomeBonus, triggerConfetti],
+    [activatingBonus, couponRefreshKey, handleWelcomeBonus],
   );
 
   const handleRetryHomeContent = useCallback(() => {

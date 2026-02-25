@@ -44,7 +44,7 @@ export default function WelcomeBonusButton({ onActivate, loading = false }: Welc
         ])
       ).start();
     }
-  }, [user?.loyalty_synced]);
+  }, [pulseAnim, user?.loyalty_synced]);
 
   async function handleActivateBonus() {
     if (loading) return;

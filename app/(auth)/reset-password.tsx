@@ -5,7 +5,7 @@ import {
   View,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import styled from "styled-components/native";
+import styledNative from "styled-components/native";
 
 import api from "@/api/api";
 import { useThemeMode } from "@/context/ThemeContext";
@@ -14,7 +14,7 @@ import AuthScreenLayout from "@/components/auth/AuthScreenLayout";
 import { ResetPasswordResponse } from "@/types";
 import { unwrapApiObject } from "@/utils/apiResponse";
 
-const Input = styled.TextInput`
+const Input = styledNative.TextInput`
   border-width: 1px;
   border-color: ${({ theme }) => theme.general.borderColor};
   border-radius: ${({ theme }) => theme.radius.md}px;
@@ -23,7 +23,7 @@ const Input = styled.TextInput`
   background-color: ${({ theme }) => theme.colors.cardBackground};
 `;
 
-const SubmitButton = styled.TouchableOpacity<{ disabled?: boolean }>`
+const SubmitButton = styledNative.TouchableOpacity<{ disabled?: boolean }>`
   margin-top: ${({ theme }) => theme.spacing.xl}px;
   padding: ${({ theme }) => theme.spacing.lg}px;
   border-radius: ${({ theme }) => theme.radius.md}px;
@@ -33,34 +33,34 @@ const SubmitButton = styled.TouchableOpacity<{ disabled?: boolean }>`
     disabled ? theme.colors.disabledBackground : theme.colors.primary};
 `;
 
-const SubmitText = styled.Text`
+const SubmitText = styledNative.Text`
   font-size: 16px;
   font-weight: 600;
   color: ${({ theme }) => theme.colors.textLight};
 `;
 
-const TokenAlert = styled.Text`
+const TokenAlert = styledNative.Text`
   text-align: center;
   color: ${({ theme }) => theme.colors.secondary};
   margin-top: ${({ theme }) => theme.spacing.xl}px;
   font-size: 14px;
 `;
 
-const InlineError = styled.Text`
+const InlineError = styledNative.Text`
   margin-top: ${({ theme }) => theme.spacing.md}px;
   text-align: center;
   color: ${({ theme }) => theme.colors.secondary};
   font-size: 14px;
 `;
 
-const HelperText = styled.Text`
+const HelperText = styledNative.Text`
   margin-top: ${({ theme }) => theme.spacing.xs}px;
   color: ${({ theme }) => theme.colors.textSecondary};
   font-size: 13px;
   line-height: 18px;
 `;
 
-const StepCallout = styled.View`
+const StepCallout = styledNative.View`
   margin-bottom: ${({ theme }) => theme.spacing.lg}px;
   padding: ${({ theme }) => theme.spacing.md}px;
   border-radius: ${({ theme }) => theme.radius.md}px;
@@ -69,14 +69,14 @@ const StepCallout = styled.View`
   background-color: ${({ theme }) => theme.general.surface};
 `;
 
-const StepCalloutTitle = styled.Text`
+const StepCalloutTitle = styledNative.Text`
   font-size: 14px;
   font-weight: 700;
   color: ${({ theme }) => theme.colors.text};
   margin-bottom: ${({ theme }) => theme.spacing.xs}px;
 `;
 
-const StepCalloutText = styled.Text`
+const StepCalloutText = styledNative.Text`
   font-size: 13px;
   line-height: 18px;
   color: ${({ theme }) => theme.colors.textSecondary};
