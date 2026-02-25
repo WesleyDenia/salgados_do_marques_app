@@ -1,42 +1,15 @@
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   TouchableOpacity,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import styled from "styled-components/native";
 
 import { useVerifyOtp } from "@/hooks/useVerifyOtp";
 import { useThemeMode } from "@/context/ThemeContext";
 import { getApiErrorMessage } from "@/utils/errorMessage";
-
-const Container = styled(SafeAreaView)`
-  flex: 1;
-  background-color: ${({ theme }) => theme.general.screenBackground};
-`;
-
-const Content = styled.ScrollView`
-  flex: 1;
-  padding: ${({ theme }) => theme.spacing.xxl}px;
-`;
-
-const Title = styled.Text`
-  font-size: 24px;
-  font-weight: 700;
-  color: ${({ theme }) => theme.colors.text};
-  text-align: center;
-  margin-bottom: ${({ theme }) => theme.spacing.sm}px;
-`;
-
-const Subtitle = styled.Text`
-  font-size: 16px;
-  color: ${({ theme }) => theme.colors.textSecondary};
-  text-align: center;
-  margin-bottom: ${({ theme }) => theme.spacing.xl}px;
-`;
+import AuthScreenLayout from "@/components/auth/AuthScreenLayout";
 
 const Input = styled.TextInput`
   border-width: 1px;
@@ -75,6 +48,37 @@ const ErrorText = styled.Text`
   text-align: center;
   color: ${({ theme }) => theme.colors.secondary};
   font-size: 14px;
+`;
+
+const HelperText = styled.Text`
+  margin-top: ${({ theme }) => theme.spacing.xs}px;
+  margin-bottom: ${({ theme }) => theme.spacing.lg}px;
+  text-align: center;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 13px;
+  line-height: 18px;
+`;
+
+const StepCallout = styled.View`
+  margin-bottom: ${({ theme }) => theme.spacing.lg}px;
+  padding: ${({ theme }) => theme.spacing.md}px;
+  border-radius: ${({ theme }) => theme.radius.md}px;
+  border-width: 1px;
+  border-color: ${({ theme }) => theme.general.borderColor};
+  background-color: ${({ theme }) => theme.general.surface};
+`;
+
+const StepCalloutTitle = styled.Text`
+  font-size: 14px;
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.text};
+  margin-bottom: ${({ theme }) => theme.spacing.xs}px;
+`;
+
+const StepCalloutText = styled.Text`
+  font-size: 13px;
+  line-height: 18px;
+  color: ${({ theme }) => theme.colors.textSecondary};
 `;
 
 const SecondaryLink = styled.Text`
@@ -149,14 +153,16 @@ export default function VerifyOtpScreen() {
   }
 
   return (
-    <Container>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <Content keyboardShouldPersistTaps="handled">
-          <Title>Validar código</Title>
-          <Subtitle>Insira o código recebido no WhatsApp e defina uma nova senha.</Subtitle>
+    <AuthScreenLayout
+      title="Validar código"
+      subtitle="Insira o código recebido no WhatsApp e defina uma nova senha."
+    >
+          <StepCallout>
+            <StepCalloutTitle>Próximo passo</StepCalloutTitle>
+            <StepCalloutText>
+              Informe o WhatsApp, digite o código de 6 dígitos recebido e defina a nova senha para concluir.
+            </StepCalloutText>
+          </StepCallout>
 
           <Input
             placeholder="Número do WhatsApp (+351900123456)"
@@ -184,6 +190,7 @@ export default function VerifyOtpScreen() {
             textContentType="oneTimeCode"
             autoCapitalize="none"
           />
+          <HelperText>Digite exatamente 6 dígitos do código enviado.</HelperText>
 
           <Input
             placeholder="Nova senha"
@@ -210,14 +217,12 @@ export default function VerifyOtpScreen() {
           {error && !formError ? <ErrorText>{error}</ErrorText> : null}
 
           <TouchableOpacity onPress={() => router.push("/(auth)/forgot-password")}>
-            <SecondaryLink>Reenviar código</SecondaryLink>
+            <SecondaryLink>Não recebeu? Reenviar código</SecondaryLink>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => router.replace("/(auth)/login")}>
             <SecondaryLink>Voltar para login</SecondaryLink>
           </TouchableOpacity>
-        </Content>
-      </KeyboardAvoidingView>
-    </Container>
+    </AuthScreenLayout>
   );
 }

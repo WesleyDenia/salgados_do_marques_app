@@ -36,6 +36,39 @@ export type RegisterPayload = {
   };
 };
 
+export type ForgotPasswordMethod = "whatsapp" | "email";
+
+export type ForgotPasswordPayload = {
+  method: ForgotPasswordMethod;
+  identifier: string;
+};
+
+export type ForgotPasswordResponse = {
+  success?: boolean;
+  message?: string;
+};
+
+export type VerifyOtpPayload = {
+  phone: string;
+  token: string;
+  newPassword: string;
+};
+
+export type VerifyOtpResponse = {
+  success?: boolean;
+  message?: string;
+};
+
+export type ResetPasswordPayload = {
+  token: string;
+  new_password: string;
+};
+
+export type ResetPasswordResponse = {
+  success?: boolean;
+  message?: string;
+};
+
 export function toAppConfig(config?: AuthConfigPayload | null): AppConfig | null {
   if (!config?.assets_base_url) {
     return null;
@@ -43,4 +76,3 @@ export function toAppConfig(config?: AuthConfigPayload | null): AppConfig | null
 
   return { assets_base_url: config.assets_base_url };
 }
-

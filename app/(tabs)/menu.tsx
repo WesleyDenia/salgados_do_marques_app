@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useMemo } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -11,25 +11,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
+import { ChevronRight } from "lucide-react-native";
 
-import api from "@/api/api";
 import { useThemeMode } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
-import { resolveAssetUrl } from "@/utils/url";
 import { useCart } from "@/context/CartContext";
 import { getLoyaltyBannerTheme } from "@/constants/themeLoyalty";
-import { unwrapApiList } from "@/utils/apiResponse";
-
-type MenuProduct = {
-  id: number;
-  name: string;
-  description: string | null;
-  price: number;
-  imageUrl: string | null;
-  categoryName: string;
-  categoryOrder: number | null;
-};
+import { useMenuProducts } from "@/hooks/useMenuProducts";
 
 export default function MenuScreen() {
   const router = useRouter();
@@ -37,93 +25,9 @@ export default function MenuScreen() {
   const { config } = useAuth();
   const { items, total } = useCart();
   const bannerTheme = useMemo(() => getLoyaltyBannerTheme(theme), [theme]);
-
-  const [rawProducts, setRawProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
-
-  const loadProducts = useCallback(async () => {
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    try {
-      setLoadError(null);
-      setLoading(true);
-      const { data } = await api.get("/products", { signal: controller.signal });
-      const list = unwrapApiList<any>(data);
-      setRawProducts(list);
-    } catch (error: any) {
-      if (error?.name === "AbortError" || error?.name === "CanceledError") return;
-      console.error("Erro ao carregar produtos", error);
-      setLoadError("Não foi possível carregar o cardápio. Verifique sua conexão e tente novamente.");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadProducts();
-    return () => {
-      abortRef.current?.abort();
-    };
-  }, [loadProducts]);
-
-  useFocusEffect(
-    useCallback(() => {
-      void loadProducts();
-      return () => abortRef.current?.abort();
-    }, [loadProducts])
-  );
-
-  const products = useMemo<MenuProduct[]>(() => {
-    return rawProducts.map((item: any) => {
-      const imagePath = item.image_url ?? item.image ?? null;
-      const resolvedImage =
-        resolveAssetUrl(imagePath, config?.assets_base_url) ??
-        (typeof imagePath === "string" ? imagePath : null);
-
-      return {
-        id: Number(item.id),
-        name: item.name,
-        description: item.description ?? null,
-        price: Number(item.price ?? 0),
-        imageUrl: resolvedImage,
-        categoryName: item?.category?.name ?? "Outros",
-        categoryOrder: item?.category?.order ?? null,
-      };
-    });
-  }, [rawProducts, config?.assets_base_url]);
-
-  const sections = useMemo(() => {
-    const map = new Map<string, MenuProduct[]>();
-
-    products.forEach((product) => {
-      const key = product.categoryName || "Outros";
-      if (!map.has(key)) {
-        map.set(key, []);
-      }
-      map.get(key)!.push(product);
-    });
-
-    return Array.from(map.entries())
-      .map(([title, items]) => ({
-        title,
-        order: items[0]?.categoryOrder ?? null,
-        data: items.sort((a, b) => a.name.localeCompare(b.name)),
-      }))
-      .sort((a, b) => {
-        const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
-        const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
-        if (orderA !== orderB) {
-          return orderA - orderB;
-        }
-        return a.title.localeCompare(b.title);
-      });
-  }, [products]);
+  const { sections, loading, refreshing, loadError, refresh, retry } = useMenuProducts({
+    assetsBaseUrl: config?.assets_base_url,
+  });
 
   const itemCount = useMemo(
     () => items.reduce((sum, item) => sum + item.quantity, 0),
@@ -190,8 +94,7 @@ export default function MenuScreen() {
           <TouchableOpacity
             style={[styles.retryButton, { backgroundColor: theme.colors.primary }]}
             onPress={() => {
-              setRefreshing(false);
-              void loadProducts();
+              void retry();
             }}
             accessibilityRole="button"
             accessibilityLabel="Tentar carregar cardápio novamente"
@@ -211,8 +114,7 @@ export default function MenuScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => {
-                setRefreshing(true);
-                void loadProducts();
+                void refresh();
               }}
               colors={[theme.colors.primary]}
               tintColor={theme.colors.primary}
@@ -260,15 +162,34 @@ export default function MenuScreen() {
                 <Text style={[styles.name, { color: theme.colors.text }]} numberOfLines={2}>
                   {item.name}
                 </Text>
+                {item.description ? (
+                  <Text
+                    style={[styles.description, { color: theme.colors.textSecondary }]}
+                    numberOfLines={2}
+                  >
+                    {item.description}
+                  </Text>
+                ) : null}
+                <View style={styles.affordanceRow}>
+                  <Text style={[styles.affordanceText, { color: theme.colors.primary }]}>
+                    Ver detalhes
+                  </Text>
+                  <ChevronRight size={14} color={theme.colors.primary} />
+                </View>
               </View>
 
-              <Text style={[styles.price, { color: theme.colors.textSecondary }]}>
-                {item.price.toLocaleString("pt-PT", {
-                  style: "currency",
-                  currency: "EUR",
-                  minimumFractionDigits: 2,
-                })}
-              </Text>
+              <View style={styles.priceColumn}>
+                <Text style={[styles.priceLabel, { color: theme.colors.textSecondary }]}>
+                  Desde
+                </Text>
+                <Text style={[styles.price, { color: theme.colors.text }]}>
+                  {item.price.toLocaleString("pt-PT", {
+                    style: "currency",
+                    currency: "EUR",
+                    minimumFractionDigits: 2,
+                  })}
+                </Text>
+              </View>
             </TouchableOpacity>
           )}
           ListEmptyComponent={
@@ -390,6 +311,33 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 16,
     fontWeight: "600",
+  },
+  description: {
+    marginTop: 4,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  affordanceRow: {
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  affordanceText: {
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
+  },
+  priceColumn: {
+    alignItems: "flex-end",
+    minWidth: 82,
+  },
+  priceLabel: {
+    fontSize: 11,
+    marginBottom: 2,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
   },
   price: {
     fontSize: 15,

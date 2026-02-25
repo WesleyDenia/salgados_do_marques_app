@@ -2,42 +2,17 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import styled from "styled-components/native";
 
 import api from "@/api/api";
 import { useThemeMode } from "@/context/ThemeContext";
 import { getApiErrorMessage } from "@/utils/errorMessage";
-
-const Container = styled(SafeAreaView)`
-  flex: 1;
-  background-color: ${({ theme }) => theme.general.screenBackground};
-`;
-
-const Content = styled.ScrollView`
-  flex: 1;
-  padding: ${({ theme }) => theme.spacing.xxl}px;
-`;
-
-const Title = styled.Text`
-  font-size: 24px;
-  font-weight: 700;
-  color: ${({ theme }) => theme.colors.text};
-  text-align: center;
-  margin-bottom: ${({ theme }) => theme.spacing.sm}px;
-`;
-
-const Subtitle = styled.Text`
-  font-size: 16px;
-  color: ${({ theme }) => theme.colors.textSecondary};
-  text-align: center;
-  margin-bottom: ${({ theme }) => theme.spacing.xl}px;
-`;
+import AuthScreenLayout from "@/components/auth/AuthScreenLayout";
+import { ResetPasswordResponse } from "@/types";
+import { unwrapApiObject } from "@/utils/apiResponse";
 
 const Input = styled.TextInput`
   border-width: 1px;
@@ -71,6 +46,42 @@ const TokenAlert = styled.Text`
   font-size: 14px;
 `;
 
+const InlineError = styled.Text`
+  margin-top: ${({ theme }) => theme.spacing.md}px;
+  text-align: center;
+  color: ${({ theme }) => theme.colors.secondary};
+  font-size: 14px;
+`;
+
+const HelperText = styled.Text`
+  margin-top: ${({ theme }) => theme.spacing.xs}px;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 13px;
+  line-height: 18px;
+`;
+
+const StepCallout = styled.View`
+  margin-bottom: ${({ theme }) => theme.spacing.lg}px;
+  padding: ${({ theme }) => theme.spacing.md}px;
+  border-radius: ${({ theme }) => theme.radius.md}px;
+  border-width: 1px;
+  border-color: ${({ theme }) => theme.general.borderColor};
+  background-color: ${({ theme }) => theme.general.surface};
+`;
+
+const StepCalloutTitle = styled.Text`
+  font-size: 14px;
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.text};
+  margin-bottom: ${({ theme }) => theme.spacing.xs}px;
+`;
+
+const StepCalloutText = styled.Text`
+  font-size: 13px;
+  line-height: 18px;
+  color: ${({ theme }) => theme.colors.textSecondary};
+`;
+
 export default function ResetPasswordScreen() {
   const router = useRouter();
   const { theme } = useThemeMode();
@@ -79,26 +90,34 @@ export default function ResetPasswordScreen() {
 
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   async function handleReset() {
     const trimmedPassword = password.trim();
 
     if (!token) {
-      Alert.alert("Link inválido", "O link de redefinição é inválido ou expirou.");
+      setFormError("O link de redefinição é inválido ou expirou.");
       return;
     }
 
     if (!trimmedPassword) {
-      Alert.alert("Nova senha", "Informe a nova senha para continuar.");
+      setFormError("Informe a nova senha para continuar.");
+      return;
+    }
+
+    if (trimmedPassword.length < 8) {
+      setFormError("A nova senha deve ter pelo menos 8 caracteres.");
       return;
     }
 
     try {
+      setFormError(null);
       setLoading(true);
-      const { data } = await api.post("/auth/reset-password", {
+      const response = await api.post<ResetPasswordResponse>("/auth/reset-password", {
         token,
         new_password: trimmedPassword,
       });
+      const data = unwrapApiObject<ResetPasswordResponse>(response.data);
 
       const message = data?.message ?? "Senha redefinida com sucesso!";
 
@@ -113,23 +132,23 @@ export default function ResetPasswordScreen() {
         error,
         "Não foi possível redefinir a senha. Tente novamente."
       );
-      Alert.alert("Ops!", message);
+      setFormError(message);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <Container>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <Content keyboardShouldPersistTaps="handled">
-          <Title>Definir nova senha</Title>
-          <Subtitle>
-            Digite a nova senha para finalizar a recuperação de acesso ao aplicativo.
-          </Subtitle>
+    <AuthScreenLayout
+      title="Definir nova senha"
+      subtitle="Digite a nova senha para finalizar a recuperação de acesso ao aplicativo."
+    >
+          <StepCallout>
+            <StepCalloutTitle>Último passo</StepCalloutTitle>
+            <StepCalloutText>
+              Defina uma nova senha para concluir a recuperação e voltar para o login.
+            </StepCalloutText>
+          </StepCallout>
 
           <View>
             <Input
@@ -137,11 +156,17 @@ export default function ResetPasswordScreen() {
               placeholderTextColor={theme.colors.placeholderText}
               secureTextEntry
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(value) => {
+                setPassword(value);
+                if (formError) setFormError(null);
+              }}
               textContentType="newPassword"
               autoCapitalize="none"
             />
+            <HelperText>Use pelo menos 8 caracteres para uma senha mais segura.</HelperText>
           </View>
+
+          {formError ? <InlineError>{formError}</InlineError> : null}
 
           <SubmitButton onPress={handleReset} disabled={loading}>
             {loading ? (
@@ -152,8 +177,6 @@ export default function ResetPasswordScreen() {
           </SubmitButton>
 
           {!token && <TokenAlert>O token de redefinição não foi encontrado.</TokenAlert>}
-        </Content>
-      </KeyboardAvoidingView>
-    </Container>
+    </AuthScreenLayout>
   );
 }

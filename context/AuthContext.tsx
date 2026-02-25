@@ -13,6 +13,7 @@ import api, { setUnauthorizedHandler } from "@/api/api";
 import { User, AppConfig, AuthResponse, LoginPayload, RegisterPayload, toAppConfig } from "@/types";
 import { useThemeMode, ThemeMode } from "@/context/ThemeContext";
 import { getToken, setToken, clearToken } from "@/utils/sessionStorage";
+import { unwrapApiObject } from "@/utils/apiResponse";
 
 type AuthContextType = {
   user: User | null;
@@ -81,10 +82,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signIn(email: string, password: string) {
     const payload: LoginPayload = { email, password };
-    const { data } = await api.post<AuthResponse>("/login", payload);
-    const token = data.token || data.access_token;
-    const user = data.user;
-    const configData: AppConfig | null = toAppConfig(data.config);
+    const response = await api.post<AuthResponse>("/login", payload);
+    const data = unwrapApiObject<AuthResponse>(response.data);
+    const token = data?.token || data?.access_token;
+    const user = data?.user;
+    const configData: AppConfig | null = toAppConfig(data?.config);
     if (!token || !user) throw new Error("Resposta inválida do backend.");
 
     await AsyncStorage.setItem("user", JSON.stringify(user));
@@ -100,9 +102,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function register(data: RegisterPayload) {
     const response = await api.post<AuthResponse>("/register", data);
-    const token = response.data.token;
-    const user = response.data.user;
-    const configData: AppConfig | null = toAppConfig(response.data.config);
+    const payload = unwrapApiObject<AuthResponse>(response.data);
+    const token = payload?.token || payload?.access_token;
+    const user = payload?.user;
+    const configData: AppConfig | null = toAppConfig(payload?.config);
 
     if (!token || !user) throw new Error("Resposta inválida do backend.");
 

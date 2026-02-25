@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiBaseUrl } from "@/utils/env";
 import { getToken, clearToken, setToken } from "@/utils/sessionStorage";
 import type { AuthResponse } from "@/types";
+import type { AxiosRequestConfig } from "axios";
 
 type UnauthorizedHandler = (() => Promise<void> | void) | null;
 let unauthorizedHandler: UnauthorizedHandler = null;
@@ -46,6 +47,10 @@ api.interceptors.request.use(async (config) => {
 
 let refreshRequest: Promise<string | null> | null = null;
 
+type RetryableRequestConfig = AxiosRequestConfig & {
+  _retry?: boolean;
+};
+
 async function refreshToken(): Promise<string | null> {
   if (refreshRequest) return refreshRequest;
 
@@ -85,7 +90,7 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const status = error.response?.status;
-    const originalRequest = error.config as any;
+    const originalRequest = (error.config ?? {}) as RetryableRequestConfig;
 
     if (status === 401 && !originalRequest?._retry) {
       originalRequest._retry = true;

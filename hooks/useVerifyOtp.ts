@@ -2,17 +2,8 @@ import { useCallback, useState } from "react";
 
 import api from "@/api/api";
 import { getApiErrorMessage } from "@/utils/errorMessage";
-
-type VerifyOtpPayload = {
-  phone: string;
-  token: string;
-  newPassword: string;
-};
-
-type VerifyOtpResponse = {
-  success?: boolean;
-  message?: string;
-};
+import { VerifyOtpPayload, VerifyOtpResponse } from "@/types";
+import { unwrapApiObject } from "@/utils/apiResponse";
 
 const GENERIC_ERROR = "Não foi possível confirmar o código. Tente novamente.";
 
@@ -30,9 +21,8 @@ export function useVerifyOtp() {
         token,
         new_password: newPassword,
       });
-
-      return data;
-    } catch (err: any) {
+      return unwrapApiObject<VerifyOtpResponse>(data) ?? {};
+    } catch (err: unknown) {
       console.error("Falha ao validar OTP", err);
       const message = getApiErrorMessage(err, GENERIC_ERROR);
       setError(message);

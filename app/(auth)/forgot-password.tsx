@@ -2,42 +2,15 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   TouchableOpacity,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import styled from "styled-components/native";
 
 import { useForgotPassword } from "@/hooks/useForgotPassword";
 import { useThemeMode } from "@/context/ThemeContext";
 import { getApiErrorMessage } from "@/utils/errorMessage";
-
-const Container = styled(SafeAreaView)`
-  flex: 1;
-  background-color: ${({ theme }) => theme.general.screenBackground};
-`;
-
-const Content = styled.ScrollView`
-  flex: 1;
-  padding: ${({ theme }) => theme.spacing.xxl}px;
-`;
-
-const Title = styled.Text`
-  font-size: 24px;
-  font-weight: 700;
-  color: ${({ theme }) => theme.colors.text};
-  text-align: center;
-  margin-bottom: ${({ theme }) => theme.spacing.sm}px;
-`;
-
-const Subtitle = styled.Text`
-  font-size: 16px;
-  color: ${({ theme }) => theme.colors.textSecondary};
-  text-align: center;
-  margin-bottom: ${({ theme }) => theme.spacing.xl}px;
-`;
+import AuthScreenLayout from "@/components/auth/AuthScreenLayout";
 
 const ToggleGroup = styled.View`
   flex-direction: row;
@@ -214,14 +187,10 @@ export default function ForgotPasswordScreen() {
   }
 
   return (
-    <Container>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <Content keyboardShouldPersistTaps="handled">
-          <Title>Recuperar acesso</Title>
-          <Subtitle>Escolha como prefere receber o código ou link de redefinição.</Subtitle>
+    <AuthScreenLayout
+      title="Recuperar acesso"
+      subtitle="Escolha como prefere receber o código ou link de redefinição."
+    >
 
           <ToggleGroup>
             <MethodButton active={method === "whatsapp"} onPress={() => handleSelect("whatsapp")}>
@@ -286,8 +255,6 @@ export default function ForgotPasswordScreen() {
           <TouchableOpacity onPress={() => router.replace("/(auth)/login")}>
             <SecondaryLink>Voltar para login</SecondaryLink>
           </TouchableOpacity>
-        </Content>
-      </KeyboardAvoidingView>
-    </Container>
+    </AuthScreenLayout>
   );
 }

@@ -2,23 +2,10 @@ import { useMemo, useRef, useState } from "react";
 import { Typography, AppTheme } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "expo-router";
-import {
-  ActivityIndicator,
-  Image,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { getApiErrorMessage } from "@/utils/errorMessage";
 import { useThemeMode } from "@/context/ThemeContext";
+import AuthScreenLayout from "@/components/auth/AuthScreenLayout";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -73,27 +60,14 @@ export default function LoginScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContainer}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View style={styles.container}>
-              <Image
-                source={require("@/assets/images/logo_icon.png")}
-                style={styles.logo}
-              />
-
-              <Text style={[Typography.title, styles.title]}>Entrar</Text>
-              <Text style={[Typography.subtitle, styles.subtitle]}>
-                Acesse sua conta para acompanhar encomendas, cupons e Coinxinhas.
-              </Text>
-
+    <AuthScreenLayout
+      title="Entrar"
+      subtitle="Acesse sua conta para acompanhar encomendas, cupons e Coinxinhas."
+      showLogo
+      centerContent
+      innerContainerStyle={styles.container}
+      logoStyle={styles.logo}
+    >
               <TextInput
                 style={[styles.input, emailError && styles.inputError]}
                 placeholder="Email"
@@ -174,41 +148,21 @@ export default function LoginScreen() {
               >
                 <Text style={styles.link}>Não tem conta? Registre-se</Text>
               </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+    </AuthScreenLayout>
   );
 }
 
 const createStyles = (theme: AppTheme) =>
   StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: theme.colors.primary },
-    scrollContainer: { flexGrow: 1, justifyContent: "center" },
-    container: { padding: 24 },
+    container: {},
     logo: {
-      width: 180,
-      height: 180,
-      alignSelf: "center",
-      marginBottom: 8,
-      resizeMode: "contain",
-    },
-    title: {
-      textAlign: "center",
-      color: theme.colors.textLight,
-      marginBottom: 8,
-    },
-    subtitle: {
-      fontSize: 14,
-      marginBottom: 32,
-      textAlign: "center",
-      color: theme.colors.textLight,
+      width: 168,
+      height: 168,
     },
     input: {
-      backgroundColor: theme.colors.background,
+      backgroundColor: theme.colors.cardBackground,
       borderWidth: 1,
-      borderColor: theme.colors.tabIconDefault,
+      borderColor: theme.general.borderColor,
       borderRadius: 8,
       padding: 12,
       marginBottom: 16,
@@ -218,14 +172,16 @@ const createStyles = (theme: AppTheme) =>
       borderColor: theme.colors.secondary,
     },
     inlineError: {
-      color: theme.colors.textLight,
+      color: theme.colors.secondary,
       marginTop: -10,
       marginBottom: 12,
       fontSize: 12,
     },
     formError: {
-      color: theme.colors.textLight,
-      backgroundColor: "#00000022",
+      color: theme.colors.secondary,
+      backgroundColor: theme.general.surface,
+      borderWidth: 1,
+      borderColor: theme.general.borderColor,
       borderRadius: 8,
       paddingHorizontal: 12,
       paddingVertical: 10,
@@ -241,5 +197,5 @@ const createStyles = (theme: AppTheme) =>
       marginBottom: 16,
     },
     buttonText: { color: theme.colors.textLight },
-    link: { color: theme.colors.textLight, textAlign: "center", marginTop: 8 },
+    link: { color: theme.colors.secondary, textAlign: "center", marginTop: 8 },
   });

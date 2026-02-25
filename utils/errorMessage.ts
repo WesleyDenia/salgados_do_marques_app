@@ -1,24 +1,41 @@
 import axios from "axios";
 
-export function getApiErrorMessage(
-  error: any,
-  fallback = "Falha ao processar sua requisição."
-): string {
-  if (axios.isAxiosError(error)) {
-    const data: any = error.response?.data;
+type UnknownRecord = Record<string, unknown>;
 
-    // Laravel validation: { message, errors: { field: [msg] } }
-    if (data?.errors && typeof data.errors === "object") {
-      const firstKey = Object.keys(data.errors)[0];
-      const firstMessage = data.errors[firstKey]?.[0];
-      if (typeof firstMessage === "string") return firstMessage;
-    }
+function isRecord(value: unknown): value is UnknownRecord {
+  return typeof value === "object" && value !== null;
+}
 
-    if (data?.message && typeof data.message === "string") {
-      return data.message;
+function getFirstValidationMessage(errors: unknown): string | null {
+  if (!isRecord(errors)) return null;
+
+  for (const value of Object.values(errors)) {
+    if (Array.isArray(value) && typeof value[0] === "string") {
+      return value[0];
     }
   }
 
-  if (typeof error?.message === "string") return error.message;
+  return null;
+}
+
+export function getApiErrorMessage(
+  error: unknown,
+  fallback = "Falha ao processar sua requisição."
+): string {
+  if (axios.isAxiosError(error)) {
+    const data: unknown = error.response?.data;
+
+    // Laravel validation: { message, errors: { field: [msg] } }
+    if (isRecord(data)) {
+      const validationMessage = getFirstValidationMessage(data.errors);
+      if (validationMessage) return validationMessage;
+
+      if (typeof data.message === "string") {
+        return data.message;
+      }
+    }
+  }
+
+  if (isRecord(error) && typeof error.message === "string") return error.message;
   return fallback;
 }

@@ -2,18 +2,8 @@ import { useCallback, useState } from "react";
 
 import api from "@/api/api";
 import { getApiErrorMessage } from "@/utils/errorMessage";
-
-type ResetMethod = "whatsapp" | "email";
-
-type ForgotPayload = {
-  method: ResetMethod;
-  identifier: string;
-};
-
-type ForgotResponse = {
-  success?: boolean;
-  message?: string;
-};
+import { ForgotPasswordPayload, ForgotPasswordResponse } from "@/types";
+import { unwrapApiObject } from "@/utils/apiResponse";
 
 const GENERIC_ERROR = "Não foi possível completar a solicitação. Tente novamente.";
 
@@ -22,16 +12,17 @@ export function useForgotPassword() {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const send = useCallback(async ({ method, identifier }: ForgotPayload) => {
+  const send = useCallback(async ({ method, identifier }: ForgotPasswordPayload) => {
     setLoading(true);
     setFeedback(null);
     setError(null);
 
     try {
-      const { data } = await api.post<ForgotResponse>("/auth/forgot-password", {
+      const response = await api.post<ForgotPasswordResponse>("/auth/forgot-password", {
         method,
         identifier,
       });
+      const data = unwrapApiObject<ForgotPasswordResponse>(response.data);
 
       const message = data?.message ?? (method === "whatsapp"
         ? "Código enviado via WhatsApp."

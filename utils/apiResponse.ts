@@ -16,3 +16,14 @@ export function unwrapApiList<T>(payload: unknown): T[] {
   return [];
 }
 
+export function unwrapApiObject<T>(payload: unknown): T | null {
+  if (isRecord(payload) && isRecord(payload.data)) {
+    return payload.data as T;
+  }
+
+  if (isRecord(payload)) {
+    return payload as T;
+  }
+
+  return null;
+}

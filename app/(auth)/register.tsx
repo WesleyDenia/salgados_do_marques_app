@@ -11,14 +11,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  ScrollView,
-  TouchableWithoutFeedback,
-  Keyboard,
-  Platform,
   Modal,
+  Platform,
+  TouchableWithoutFeedback,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Typography, AppTheme } from "@/constants/theme";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
@@ -26,6 +22,7 @@ import api from "@/api/api";
 import { Calendar } from "lucide-react-native";
 import { getApiErrorMessage } from "@/utils/errorMessage";
 import { useThemeMode } from "@/context/ThemeContext";
+import AuthScreenLayout from "@/components/auth/AuthScreenLayout";
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -256,21 +253,15 @@ export default function RegisterScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+    <>
+      <AuthScreenLayout
+        title="Criar Conta"
+        subtitle="Preencha os dados para registrar e começar a acompanhar encomendas e benefícios."
+        innerContainerStyle={styles.container}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContainer}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View style={styles.container}>
-              <Text style={[Typography.title, styles.title]}>Criar Conta</Text>
-              <Text style={[Typography.subtitle, styles.subtitle]}>
-                Preencha os dados para registrar
-              </Text>
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Dados básicos</Text>
+                <Text style={styles.sectionHint}>Informações principais para criar a sua conta.</Text>
 
               <TextInput
                 style={styles.input}
@@ -289,7 +280,13 @@ export default function RegisterScreen() {
                 value={email}
                 onChangeText={setEmail}
               />
+              </View>
 
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Contacto</Text>
+                <Text style={styles.sectionHint}>
+                  O telefone será usado para contacto e recuperação via WhatsApp.
+                </Text>
               <TextInput
                 style={styles.input}
                 placeholder="Telefone"
@@ -302,6 +299,7 @@ export default function RegisterScreen() {
                 }}
                 textContentType="telephoneNumber"
               />
+              <Text style={styles.inlineHelper}>Digite apenas o número. O prefixo +351 é aplicado automaticamente.</Text>
 
               <TextInput
                 style={styles.input}
@@ -311,6 +309,7 @@ export default function RegisterScreen() {
                 value={nif}
                 onChangeText={setNif}
               />
+              <Text style={styles.inlineHelper}>NIF e data de nascimento são opcionais.</Text>
 
               <View style={styles.dateInputContainer}>
                 <TextInput
@@ -330,7 +329,13 @@ export default function RegisterScreen() {
                   <Calendar color={theme.colors.textSecondary} size={20} />
                 </TouchableOpacity>
               </View>
+              </View>
 
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Segurança</Text>
+                <Text style={styles.sectionHint}>
+                  Defina uma senha segura com pelo menos 8 caracteres, usando letras e números.
+                </Text>
               <TextInput
                 style={styles.input}
                 placeholder="Senha"
@@ -352,7 +357,10 @@ export default function RegisterScreen() {
                 value={confirm}
                 onChangeText={setConfirm}
               />
+              </View>
 
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Consentimento e privacidade</Text>
               <View style={styles.termsContainer}>
                 <TouchableOpacity
                   style={styles.checkboxContainer}
@@ -385,6 +393,7 @@ export default function RegisterScreen() {
                   <Text style={styles.termsError}>{termsError}</Text>
                 )}
               </View>
+              </View>
 
               <TouchableOpacity
                 style={[
@@ -404,10 +413,8 @@ export default function RegisterScreen() {
               <TouchableOpacity onPress={() => router.push("/login")}>
                 <Text style={styles.link}>Já tem conta? Faça login</Text>
               </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
+      </AuthScreenLayout>
+      
       {Platform.OS === "ios" && (
         <Modal transparent visible={showDatePicker} animationType="fade">
           <View style={styles.modalWrapper}>
@@ -441,17 +448,28 @@ export default function RegisterScreen() {
           </View>
         </Modal>
       )}
-    </SafeAreaView>
+    </>
   );
 }
 
 const createStyles = (theme: AppTheme) =>
   StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: theme.general.screenBackground },
-    scrollContainer: { flexGrow: 1, justifyContent: "center" },
-    container: { padding: 24 },
-    title: { marginBottom: 8, textAlign: "center", color: theme.colors.text },
-    subtitle: { marginBottom: 32, textAlign: "center", color: theme.colors.textSecondary },
+    container: {},
+    section: {
+      marginBottom: 8,
+    },
+    sectionTitle: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: theme.colors.text,
+      marginBottom: 4,
+    },
+    sectionHint: {
+      fontSize: 12,
+      lineHeight: 17,
+      color: theme.colors.textSecondary,
+      marginBottom: 12,
+    },
     input: {
       backgroundColor: theme.colors.cardBackground,
       borderWidth: 1,
@@ -460,6 +478,13 @@ const createStyles = (theme: AppTheme) =>
       padding: 12,
       marginBottom: 16,
       color: theme.colors.text,
+    },
+    inlineHelper: {
+      marginTop: -8,
+      marginBottom: 12,
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      lineHeight: 16,
     },
     button: {
       backgroundColor: theme.colors.primary,
