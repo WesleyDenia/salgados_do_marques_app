@@ -7,7 +7,9 @@ import {
   ActivityIndicator,
   ViewStyle,
   StyleProp,
+  Alert,
 } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import { Coupon } from "@/types";
 import { AppTheme, resolveShadow } from "@/constants/theme";
 import { CouponCardTheme } from "@/constants/themeCoupons";
@@ -54,6 +56,13 @@ export default function CouponCard({
       : `${amountValue.toFixed(2)}€ de desconto`;
 
   const showActivateButton = !active && typeof onActivate === "function";
+  const canCopyCode = active && typeof code === "string" && code.trim().length > 0;
+
+  async function handleCopyCode() {
+    if (!canCopyCode) return;
+    await Clipboard.setStringAsync(code.trim());
+    Alert.alert("Código copiado", "O código do cupom foi copiado para a área de transferência.");
+  }
 
   return (
     <TouchableOpacity
@@ -90,7 +99,12 @@ export default function CouponCard({
             <View style={styles.codeContainer}>
               <Text style={styles.codeLabel}>Código do desconto</Text>
               <Text style={styles.codeValue}>{code ?? "—"}</Text>
-              <Text style={styles.codeHint}>Use este código ao concluir a encomenda.</Text>
+              <Text style={styles.codeHint}>Apresente este código na loja ao pagar a encomenda.</Text>
+              {canCopyCode ? (
+                <TouchableOpacity style={styles.copyButton} onPress={handleCopyCode}>
+                  <Text style={styles.copyButtonText}>Copiar código</Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
           ) : showActivateButton ? (
             <View style={styles.actionBlock}>
@@ -234,5 +248,21 @@ const useStyles = (
       color: theme.colors.textSecondary,
       textAlign: "center",
       lineHeight: 15,
+    },
+    copyButton: {
+      marginTop: theme.spacing.sm,
+      paddingHorizontal: theme.spacing.md,
+      paddingVertical: theme.spacing.xs,
+      borderRadius: theme.radius.sm,
+      borderWidth: 1,
+      borderColor: theme.colors.primary,
+      backgroundColor: theme.general.surface,
+    },
+    copyButtonText: {
+      color: theme.colors.primary,
+      fontWeight: "600",
+      fontSize: 12,
+      textTransform: "uppercase",
+      letterSpacing: 0.4,
     },
   });

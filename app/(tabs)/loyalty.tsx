@@ -12,6 +12,7 @@ import {
   Modal,
 } from "react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "expo-router";
 import { AppTheme, Typography, resolveShadow } from "@/constants/theme";
 import { getLoyaltyGridTheme, LoyaltyGridTheme } from "@/constants/themeLoyalty";
 import { useLoyalty } from "@/context/LoyaltyContext";
@@ -26,6 +27,7 @@ import QuantitySelector from "@/components/QuantitySelector";
 import { getApiErrorMessage } from "@/utils/errorMessage";
 
 export default function LoyaltyScreen() {
+  const router = useRouter();
   const { theme, mode } = useThemeMode();
   const gridTheme = useMemo(() => getLoyaltyGridTheme(theme), [theme]);
   const styles = useMemo(() => createStyles(theme, gridTheme), [theme, gridTheme]);
@@ -39,6 +41,7 @@ export default function LoyaltyScreen() {
   const [redeemingId, setRedeemingId] = useState<number | null>(null);
   const [selectedReward, setSelectedReward] = useState<LoyaltyReward | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [redeemSuccessMessage, setRedeemSuccessMessage] = useState<string | null>(null);
   const milestones = data?.milestones ?? [];
   const bannerGoal =
     milestones.length > 0
@@ -79,6 +82,11 @@ export default function LoyaltyScreen() {
         await fetchRewards();
         await refetchSummary();
         setError(null);
+        setRedeemSuccessMessage(
+          safeQuantity > 1
+            ? `Recompensa resgatada com sucesso (${safeQuantity} unidades). Veja o cupom na aba Cupons.`
+            : "Recompensa resgatada com sucesso. Veja o cupom na aba Cupons."
+        );
     } catch (err: any) {
       console.error("Erro ao resgatar recompensa", err);
       const message = getApiErrorMessage(
@@ -86,6 +94,7 @@ export default function LoyaltyScreen() {
         "Não foi possível resgatar a recompensa."
       );
       setError(message);
+      setRedeemSuccessMessage(null);
       Alert.alert("Erro", message);
     } finally {
       setRedeemingId(null);
@@ -178,8 +187,10 @@ export default function LoyaltyScreen() {
                 onPress={() => {
                   if (canClaim && !isProcessing) {
                     if (availableUnits <= 1) {
+                      setRedeemSuccessMessage(null);
                       void handleRedeem(item.id, 1);
                     } else {
+                      setRedeemSuccessMessage(null);
                       setSelectedReward(item);
                       setQuantity(1);
                     }
@@ -232,10 +243,21 @@ export default function LoyaltyScreen() {
           />
         }
         ListHeaderComponent={
-          <View style={styles.header}>            
+          <View style={styles.header}>
             <Text style={[Typography.subtitle, styles.subtitle]}>
               Troque suas Coinxinhas por recompensas!
             </Text>
+            {redeemSuccessMessage ? (
+              <View style={styles.successCallout}>
+                <Text style={styles.successCalloutText}>{redeemSuccessMessage}</Text>
+                <TouchableOpacity
+                  style={styles.successCalloutButton}
+                  onPress={() => router.push("/(tabs)/coupons")}
+                >
+                  <Text style={styles.successCalloutButtonText}>Ir para Cupons</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
           </View>
         }
         ListEmptyComponent={
@@ -307,6 +329,7 @@ export default function LoyaltyScreen() {
                         : 1,
                     );
                     const safeQuantity = Math.max(1, Math.min(quantity, maxUnits));
+                    setRedeemSuccessMessage(null);
                     void handleRedeem(selectedReward.id, safeQuantity);
                     setSelectedReward(null);
                   }
@@ -336,12 +359,39 @@ const createStyles = (theme: AppTheme, gridTheme: LoyaltyGridTheme) =>
     },
     header: {
       paddingBottom: theme.spacing.md,
+      gap: theme.spacing.sm,
     },
     subtitle: {
       textAlign: "center",
       marginVertical: theme.spacing.lg,
       paddingHorizontal: theme.spacing.md,
       color: theme.colors.textSecondary,
+    },
+    successCallout: {
+      borderRadius: theme.radius.md,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: theme.general.successBorder,
+      backgroundColor: theme.colors.cardBackground,
+      padding: theme.spacing.md,
+      gap: theme.spacing.sm,
+    },
+    successCalloutText: {
+      fontSize: 13,
+      lineHeight: 18,
+      color: theme.colors.text,
+      textAlign: "center",
+    },
+    successCalloutButton: {
+      alignSelf: "center",
+      backgroundColor: theme.colors.primary,
+      borderRadius: theme.radius.sm,
+      paddingHorizontal: theme.spacing.md,
+      paddingVertical: theme.spacing.sm,
+    },
+    successCalloutButtonText: {
+      color: theme.colors.textLight,
+      fontWeight: "700",
+      fontSize: 13,
     },
     cardWrapper: {
       width: "100%",

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Typography, AppTheme } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "expo-router";
@@ -31,6 +31,7 @@ export default function LoginScreen() {
   const [formError, setFormError] = useState<string | null>(null);
   const { theme } = useThemeMode();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const passwordInputRef = useRef<TextInput>(null);
 
   const isValidEmail = (value: string) => /\S+@\S+\.\S+/.test(value.trim());
 
@@ -107,10 +108,15 @@ export default function LoginScreen() {
                 }}
                 autoCorrect={false}
                 textContentType="emailAddress"
+                returnKeyType="next"
+                onSubmitEditing={() => passwordInputRef.current?.focus()}
+                accessibilityLabel="Email"
+                accessibilityHint="Digite o email da sua conta"
               />
               {emailError ? <Text style={styles.inlineError}>{emailError}</Text> : null}
 
               <TextInput
+                ref={passwordInputRef}
                 style={[styles.input, passwordError && styles.inputError]}
                 placeholder="Senha"
                 placeholderTextColor={theme.colors.textSecondary}
@@ -124,6 +130,12 @@ export default function LoginScreen() {
                   if (formError) setFormError(null);
                 }}
                 textContentType="password"
+                returnKeyType="go"
+                onSubmitEditing={() => {
+                  void handleLogin();
+                }}
+                accessibilityLabel="Senha"
+                accessibilityHint="Digite a senha para entrar na sua conta"
               />
               {passwordError ? <Text style={styles.inlineError}>{passwordError}</Text> : null}
 
@@ -133,6 +145,10 @@ export default function LoginScreen() {
                 style={[styles.button, loading && { opacity: 0.6 }]}
                 onPress={handleLogin}
                 disabled={loading}
+                accessibilityRole="button"
+                accessibilityLabel="Entrar"
+                accessibilityHint="Faz login na sua conta"
+                accessibilityState={{ disabled: loading, busy: loading }}
               >
                 {loading ? (
                   <ActivityIndicator color={theme.colors.textLight} />
@@ -141,11 +157,21 @@ export default function LoginScreen() {
                 )}
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => router.push("/(auth)/forgot-password")}>
+              <TouchableOpacity
+                onPress={() => router.push("/(auth)/forgot-password")}
+                accessibilityRole="button"
+                accessibilityLabel="Esqueci minha senha"
+                accessibilityHint="Abre o fluxo de recuperação de senha"
+              >
                 <Text style={styles.link}>Esqueci minha senha</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => router.push("/register")}>
+              <TouchableOpacity
+                onPress={() => router.push("/register")}
+                accessibilityRole="button"
+                accessibilityLabel="Registrar nova conta"
+                accessibilityHint="Abre a tela de cadastro"
+              >
                 <Text style={styles.link}>Não tem conta? Registre-se</Text>
               </TouchableOpacity>
             </View>

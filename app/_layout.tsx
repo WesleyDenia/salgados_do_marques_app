@@ -10,6 +10,34 @@ import { LoyaltyProvider } from "@/context/LoyaltyContext";
 import { CartProvider } from "@/context/CartContext";
 import * as NavigationBar from "expo-navigation-bar";
 
+const AUTH_ROUTE_GROUPS = new Set(["(auth)", "auth"]);
+const PROTECTED_ROUTE_GROUPS = new Set(["(tabs)"]);
+const PUBLIC_STANDALONE_ROUTE_GROUPS = new Set(["details"]);
+
+function getCurrentRouteGroup(segments: string[]): string | null {
+  return segments[0] ?? null;
+}
+
+function isAuthRoute(group: string | null): boolean {
+  return !!group && AUTH_ROUTE_GROUPS.has(group);
+}
+
+function isProtectedRoute(group: string | null): boolean {
+  return !!group && PROTECTED_ROUTE_GROUPS.has(group);
+}
+
+function isPublicStandaloneRoute(group: string | null): boolean {
+  return !!group && PUBLIC_STANDALONE_ROUTE_GROUPS.has(group);
+}
+
+function canGuestAccessRoute(group: string | null): boolean {
+  return isAuthRoute(group) || isPublicStandaloneRoute(group);
+}
+
+function canAuthenticatedUserAccessRoute(group: string | null): boolean {
+  return isProtectedRoute(group) || isPublicStandaloneRoute(group);
+}
+
 function AuthGuard() {
   const { user, loading } = useAuth();
   const { theme } = useThemeMode();
@@ -19,22 +47,16 @@ function AuthGuard() {
   useEffect(() => {
     if (loading) return;
 
-    const currentGroup = segments[0];
-    const inAuthGroup = currentGroup === "(auth)" || currentGroup === "auth";
-    const inTabsGroup = currentGroup === "(tabs)";
-    const allowedStandaloneGroups = ["details"]; // rotas acessíveis fora das tabs
-    const inAllowedStandalone = currentGroup
-      ? allowedStandaloneGroups.includes(currentGroup)
-      : false;
+    const currentGroup = getCurrentRouteGroup(segments);
 
     // 🚫 Usuário não logado → garantir que está no grupo (auth)
-    if (!user && !inAuthGroup && !inAllowedStandalone) {
+    if (!user && !canGuestAccessRoute(currentGroup)) {
       router.replace("/(auth)/login");
       return;
     }
 
     // ✅ Usuário logado → garantir que está nas tabs
-    if (user && !inTabsGroup && !inAllowedStandalone) {
+    if (user && !canAuthenticatedUserAccessRoute(currentGroup)) {
       router.replace("/(tabs)");
       return;
     }

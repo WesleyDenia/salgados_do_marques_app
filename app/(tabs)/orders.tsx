@@ -398,6 +398,9 @@ export default function OrdersScreen() {
               <TouchableOpacity
                 style={styles.selectItemsButton}
                 onPress={() => router.push("/(tabs)/menu")}
+                accessibilityRole="button"
+                accessibilityLabel="Fazer encomenda"
+                accessibilityHint="Abre o cardápio para adicionar itens"
               >
                 <Text style={styles.selectItemsText}>Faça sua encomenda</Text>
               </TouchableOpacity>
@@ -444,6 +447,8 @@ export default function OrdersScreen() {
                       <TouchableOpacity
                         style={styles.removeButton}
                         onPress={() => removeItem(item.key)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remover ${item.product.name} da encomenda`}
                       >
                         <Text style={styles.removeText}>Remover</Text>
                       </TouchableOpacity>
@@ -458,6 +463,13 @@ export default function OrdersScreen() {
                   <TouchableOpacity
                     style={styles.selector}
                     onPress={() => setStoreModalVisible(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      selectedStore
+                        ? `Loja de retirada selecionada: ${selectedStore.name}`
+                        : "Selecionar loja de retirada"
+                    }
+                    accessibilityHint="Abre a lista de lojas disponíveis"
                   >
                     <Text style={styles.selectorLabel}>Loja de retirada</Text>
                     <Text style={styles.selectorValue}>
@@ -474,6 +486,8 @@ export default function OrdersScreen() {
                         onPress={() => {
                           void fetchStores({ accepts_orders: true });
                         }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Tentar carregar lojas novamente"
                       >
                         <Text style={styles.inlineRetryText}>Tentar novamente</Text>
                       </TouchableOpacity>
@@ -484,6 +498,12 @@ export default function OrdersScreen() {
                     <TouchableOpacity
                       style={styles.selector}
                       onPress={() => setShowDatePicker(true)}
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        hasSelectedDate
+                          ? `Data de retirada selecionada: ${scheduledAt.toLocaleDateString("pt-PT")}`
+                          : "Selecionar data de retirada"
+                      }
                     >
                       <Text style={styles.selectorLabel}>Data (Passo 1)</Text>
                       <Text style={styles.selectorValue}>
@@ -497,6 +517,21 @@ export default function OrdersScreen() {
                       style={[styles.selector, !hasSelectedDate && styles.selectorDisabled]}
                       onPress={() => setShowHourPicker(true)}
                       disabled={!hasSelectedDate}
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        hasSelectedTime
+                          ? `Horário de retirada selecionado: ${scheduledAt.toLocaleTimeString("pt-PT", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}`
+                          : "Selecionar hora de retirada"
+                      }
+                      accessibilityHint={
+                        hasSelectedDate
+                          ? "Abre a seleção de hora e minutos"
+                          : "Selecione a data primeiro"
+                      }
+                      accessibilityState={{ disabled: !hasSelectedDate }}
                     >
                       <Text style={styles.selectorLabel}>Hora (Passos 2-3)</Text>
                       <Text style={styles.selectorValue}>
@@ -523,6 +558,8 @@ export default function OrdersScreen() {
                         onPress={() => {
                           void loadSettings();
                         }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Tentar carregar regras de agendamento novamente"
                       >
                         <Text style={styles.inlineRetryText}>Tentar novamente</Text>
                       </TouchableOpacity>
@@ -549,6 +586,14 @@ export default function OrdersScreen() {
                     ]}
                     disabled={submitting || !checkoutReadiness.ready}
                     onPress={handleSubmit}
+                    accessibilityRole="button"
+                    accessibilityLabel={checkoutReadiness.ctaLabel}
+                    accessibilityHint={
+                      checkoutReadiness.ready
+                        ? "Confirma e envia a encomenda"
+                        : checkoutReadiness.message
+                    }
+                    accessibilityState={{ disabled: submitting || !checkoutReadiness.ready, busy: submitting }}
                   >
                     {submitting ? (
                       <ActivityIndicator color={theme.colors.textLight} />
@@ -566,6 +611,9 @@ export default function OrdersScreen() {
               <TouchableOpacity
                 style={styles.filterButton}
                 onPress={() => setShowStatusFilter(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Filtrar histórico por status"
+                accessibilityHint="Abre as opções de filtro de encomendas"
               >
                 <View style={styles.filterButtonContent}>
                   <Text style={styles.filterButtonText}>
@@ -599,6 +647,8 @@ export default function OrdersScreen() {
                 onPress={() => {
                   void loadOrders();
                 }}
+                accessibilityRole="button"
+                accessibilityLabel="Tentar carregar encomendas novamente"
               >
                 <Text style={styles.inlineRetryText}>Tentar novamente</Text>
               </TouchableOpacity>

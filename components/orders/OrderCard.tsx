@@ -12,20 +12,81 @@ type OrderCardProps = {
   canCancel: boolean;
 };
 
+const STATUS_LABELS: Record<Order["status"], string> = {
+  placed: "Realizada",
+  accepted: "Aceita",
+  rejected: "Rejeitada",
+  ready: "Pronta",
+  done: "Concluída",
+  canceled: "Cancelada",
+};
+
+const getStatusColors = (status: Order["status"], theme: AppTheme) => {
+  switch (status) {
+    case "accepted":
+      return {
+        background: theme.colors.accentSuccess,
+        text: theme.colors.textLight,
+      };
+    case "ready":
+      return {
+        background: theme.colors.primary,
+        text: theme.colors.textLight,
+      };
+    case "rejected":
+    case "canceled":
+      return {
+        background: theme.colors.secondary,
+        text: theme.colors.textLight,
+      };
+    case "done":
+      return {
+        background: theme.colors.disabledBackground,
+        text: theme.colors.text,
+      };
+    case "placed":
+    default:
+      return {
+        background: theme.general.surface,
+        text: theme.colors.text,
+      };
+  }
+};
+
 function OrderCard({ order, theme, onPress, onCancel, canCancel }: OrderCardProps) {
   const styles = createStyles(theme);
+  const statusColors = getStatusColors(order.status, theme);
+  const statusLabel = STATUS_LABELS[order.status] ?? order.status;
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress}>
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
       <View style={styles.header}>
-        <Text style={styles.title}>Encomenda #{order.id}</Text>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{order.status.toUpperCase()}</Text>
+        <View style={styles.headerInfo}>
+          <Text style={styles.title}>Encomenda #{order.id}</Text>
+          <Text style={styles.subtitle}>Toque para ver os detalhes</Text>
+        </View>
+        <View style={[styles.badge, { backgroundColor: statusColors.background }]}>
+          <Text style={[styles.badgeText, { color: statusColors.text }]}>{statusLabel}</Text>
         </View>
       </View>
-      <Text style={styles.meta}>Retirada: {formatDateTime(order.scheduled_at)}</Text>
-      {order.store ? <Text style={styles.meta}>Loja: {order.store.name}</Text> : null}
-      <Text style={styles.meta}>Total: {formatCurrency(order.total)}</Text>
+
+      <View style={styles.metaBlock}>
+        <Text style={styles.metaLabel}>Retirada</Text>
+        <Text style={styles.metaValue}>{formatDateTime(order.scheduled_at)}</Text>
+      </View>
+
+      {order.store ? (
+        <View style={styles.metaBlock}>
+          <Text style={styles.metaLabel}>Loja</Text>
+          <Text style={styles.metaValue}>{order.store.name}</Text>
+        </View>
+      ) : null}
+
+      <View style={styles.totalRow}>
+        <Text style={styles.totalLabel}>Total</Text>
+        <Text style={styles.totalValue}>{formatCurrency(order.total)}</Text>
+      </View>
+
       {canCancel ? (
         <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
           <Text style={styles.cancelText}>Cancelar encomenda</Text>
@@ -50,27 +111,63 @@ const createStyles = (theme: AppTheme) =>
     header: {
       flexDirection: "row",
       justifyContent: "space-between",
-      alignItems: "center",
+      alignItems: "flex-start",
+      gap: 12,
+    },
+    headerInfo: {
+      flex: 1,
     },
     title: {
       fontSize: 16,
       fontWeight: "700",
       color: theme.colors.text,
     },
+    subtitle: {
+      marginTop: 2,
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+    },
     badge: {
-      backgroundColor: theme.colors.primary,
       borderRadius: 999,
       paddingHorizontal: 10,
       paddingVertical: 4,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: theme.colors.border,
     },
     badgeText: {
       fontSize: 12,
       fontWeight: "700",
-      color: theme.colors.textLight,
     },
-    meta: {
+    metaBlock: {
+      gap: 2,
+    },
+    metaLabel: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+    },
+    metaValue: {
+      fontSize: 14,
+      color: theme.colors.text,
+      fontWeight: "500",
+    },
+    totalRow: {
+      marginTop: 4,
+      paddingTop: 8,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: theme.colors.border,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    totalLabel: {
       fontSize: 13,
       color: theme.colors.textSecondary,
+      fontWeight: "600",
+    },
+    totalValue: {
+      fontSize: 15,
+      color: theme.colors.text,
+      fontWeight: "700",
     },
     cancelButton: {
       marginTop: 8,

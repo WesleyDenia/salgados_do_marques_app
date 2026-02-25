@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import { useThemeMode } from "@/context/ThemeContext";
 import { AppTheme } from "@/constants/theme";
 import { useCoupons } from "@/context/CouponsContext";
@@ -11,6 +12,7 @@ export default function CouponDetailsScreen() {
   const router = useRouter();
   const { theme, mode } = useThemeMode();
   const { availableCoupons } = useCoupons();
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
 
   const coupon = useMemo(() => {
     const parsedId = Number(id);
@@ -20,6 +22,18 @@ export default function CouponDetailsScreen() {
 
   const styles = useMemo(() => createStyles(theme), [theme]);
   const barStyle = mode === "dark" ? "light-content" : "dark-content";
+
+  useEffect(() => {
+    if (!copyFeedback) return;
+    const timeout = setTimeout(() => setCopyFeedback(null), 2000);
+    return () => clearTimeout(timeout);
+  }, [copyFeedback]);
+
+  async function handleCopyCode() {
+    if (!coupon?.code) return;
+    await Clipboard.setStringAsync(coupon.code);
+    setCopyFeedback("Código copiado para a área de transferência.");
+  }
 
   if (!coupon) {
     return (
@@ -40,11 +54,18 @@ export default function CouponDetailsScreen() {
       <StatusBar backgroundColor={theme.colors.primary} barStyle={barStyle} />
       <AppHeader />
       <ScrollView contentContainerStyle={styles.container}>
-        <TouchableOpacity style={styles.backButtonInline} onPress={() => router.back()}>
-          <Text style={styles.backButtonTextInline}>Voltar</Text>
-        </TouchableOpacity>
-
         <Text style={styles.title}>{coupon.title}</Text>
+
+        <View style={styles.statusCallout}>
+          <Text style={styles.statusCalloutTitle}>
+            {coupon.code ? "Cupom pronto para uso" : "Cupom sem código disponível"}
+          </Text>
+          <Text style={styles.statusCalloutText}>
+            {coupon.code
+              ? "Copie o código abaixo e apresente na loja no momento do pagamento."
+              : "Ative o cupom na aba Cupons para gerar um código de desconto."}
+          </Text>
+        </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Validade</Text>
@@ -58,6 +79,12 @@ export default function CouponDetailsScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Código</Text>
         <Text style={styles.code}>{coupon.code}</Text>
+        {coupon.code ? (
+          <TouchableOpacity style={styles.copyButton} onPress={handleCopyCode}>
+            <Text style={styles.copyButtonText}>Copiar código</Text>
+          </TouchableOpacity>
+        ) : null}
+        {copyFeedback ? <Text style={styles.copyFeedback}>{copyFeedback}</Text> : null}
       </View>
 
       {coupon.body ? (
@@ -83,22 +110,28 @@ const createStyles = (theme: AppTheme) =>
       gap: theme.spacing.lg,
       paddingTop: theme.spacing.lg + theme.spacing.md,
     },
-    backButtonInline: {
-      alignSelf: "flex-start",
-      paddingVertical: theme.spacing.xs,
-      paddingHorizontal: theme.spacing.sm,
-      borderRadius: theme.radius.md,
-      borderWidth: 1,
-      borderColor: theme.general.borderColor,
-    },
-    backButtonTextInline: {
-      color: theme.colors.textSecondary,
-      fontWeight: "500",
-    },
     title: {
       fontSize: 24,
       fontWeight: "700",
       color: theme.colors.text,
+    },
+    statusCallout: {
+      borderRadius: theme.radius.md,
+      borderWidth: 1,
+      borderColor: theme.colors.primary,
+      backgroundColor: theme.general.surface,
+      padding: theme.spacing.md,
+      gap: theme.spacing.xs,
+    },
+    statusCalloutTitle: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: theme.colors.text,
+    },
+    statusCalloutText: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: theme.colors.textSecondary,
     },
     section: {
       gap: theme.spacing.xs,
@@ -120,6 +153,28 @@ const createStyles = (theme: AppTheme) =>
       fontWeight: "700",
       color: theme.colors.primary,
       letterSpacing: 1,
+    },
+    copyButton: {
+      alignSelf: "flex-start",
+      marginTop: theme.spacing.sm,
+      paddingVertical: theme.spacing.xs,
+      paddingHorizontal: theme.spacing.md,
+      borderRadius: theme.radius.md,
+      borderWidth: 1,
+      borderColor: theme.colors.primary,
+      backgroundColor: theme.general.screenBackground,
+    },
+    copyButtonText: {
+      color: theme.colors.primary,
+      fontWeight: "600",
+      textTransform: "uppercase",
+      fontSize: 12,
+      letterSpacing: 0.4,
+    },
+    copyFeedback: {
+      marginTop: theme.spacing.xs,
+      fontSize: 13,
+      color: theme.colors.textSecondary,
     },
     notFoundContainer: {
       flex: 1,

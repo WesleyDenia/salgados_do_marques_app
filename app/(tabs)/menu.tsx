@@ -140,6 +140,18 @@ export default function MenuScreen() {
         ]}
         onPress={() => router.push("/(tabs)/orders")}
         disabled={itemCount === 0}
+        accessibilityRole="button"
+        accessibilityLabel={
+          itemCount > 0
+            ? `Abrir encomenda. ${itemCount} item${itemCount > 1 ? "s" : ""} no carrinho`
+            : "Sua encomenda vazia"
+        }
+        accessibilityHint={
+          itemCount > 0
+            ? "Abre a tela de encomenda para revisar os itens"
+            : "Adicione itens ao cardápio para habilitar a encomenda"
+        }
+        accessibilityState={{ disabled: itemCount === 0 }}
       >
         <View>
           <Text style={[styles.cartTitle, { color: theme.colors.textLight }]}>Sua encomenda</Text>
@@ -181,6 +193,8 @@ export default function MenuScreen() {
               setRefreshing(false);
               void loadProducts();
             }}
+            accessibilityRole="button"
+            accessibilityLabel="Tentar carregar cardápio novamente"
           >
             <Text style={[styles.retryButtonText, { color: theme.colors.textLight }]}>
               Tentar novamente
@@ -226,6 +240,13 @@ export default function MenuScreen() {
                   },
                 })
               }
+              accessibilityRole="button"
+              accessibilityLabel={`${item.name}, ${item.price.toLocaleString("pt-PT", {
+                style: "currency",
+                currency: "EUR",
+                minimumFractionDigits: 2,
+              })}`}
+              accessibilityHint="Abre os detalhes do produto"
             >
               {item.imageUrl ? (
                 <Image source={{ uri: item.imageUrl }} style={styles.image} resizeMode="cover" />

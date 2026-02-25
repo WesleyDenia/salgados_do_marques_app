@@ -47,7 +47,7 @@ export default function CouponsScreen() {
           Ative o seu cupom e aproveite os descontos!
         </Text>
         <Text style={styles.helperText}>
-          Ativar gera seu código de desconto. Depois, use esse código ao finalizar a encomenda.
+          Ativar gera seu código de desconto. Depois, apresente esse código na loja ao pagar a encomenda.
         </Text>
 
         {loading ? (
