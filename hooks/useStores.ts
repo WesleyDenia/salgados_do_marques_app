@@ -11,6 +11,10 @@ type StoreQuery = {
   accepts_orders?: boolean;
 };
 
+type StoreQueryParams = Omit<StoreQuery, "accepts_orders"> & {
+  accepts_orders?: boolean | 0 | 1;
+};
+
 type UseStoresResult = {
   stores: Store[];
   loading: boolean;
@@ -32,7 +36,7 @@ export function useStores(): UseStoresResult {
     setLoading(true);
     setError(null);
     try {
-      const normalizedParams: StoreQuery = {
+      const normalizedParams: StoreQueryParams = {
         ...params,
         accepts_orders:
           typeof params.accepts_orders === "boolean"

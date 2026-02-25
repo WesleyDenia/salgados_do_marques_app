@@ -13,6 +13,7 @@ import {
 
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Markdown from "react-native-markdown-display";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useThemeMode } from "@/context/ThemeContext";
 import AppHeader from "@/components/AppHeader";
@@ -25,6 +26,7 @@ import { resolveAssetUrl } from "@/utils/url";
 
 export default function ProductDetailScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { theme, mode } = useThemeMode();
   const { addItem } = useCart();
   const { config } = useAuth();
@@ -68,6 +70,10 @@ export default function ProductDetailScreen() {
   );
 
   const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
     router.replace("/(tabs)/menu");
   };
 
@@ -120,10 +126,65 @@ export default function ProductDetailScreen() {
   }, [loadProduct]);
 
   const maxFlavors = selectedVariant?.max_flavors ?? 0;
+  const unitPrice = useMemo(
+    () => Number(selectedVariant?.price ?? product?.price ?? 0),
+    [product?.price, selectedVariant?.price]
+  );
+  const subtotal = useMemo(() => unitPrice * quantity, [quantity, unitPrice]);
+  const formattedUnitPrice = useMemo(
+    () =>
+      unitPrice.toLocaleString("pt-PT", {
+        style: "currency",
+        currency: "EUR",
+        minimumFractionDigits: 2,
+      }),
+    [unitPrice]
+  );
+  const formattedSubtotal = useMemo(
+    () =>
+      subtotal.toLocaleString("pt-PT", {
+        style: "currency",
+        currency: "EUR",
+        minimumFractionDigits: 2,
+      }),
+    [subtotal]
+  );
   const totalFlavorCount = useMemo(
     () => Object.values(flavorCounts).reduce((sum, value) => sum + value, 0),
     [flavorCounts]
   );
+  const flavorSelectionStatus = useMemo(() => {
+    if (!selectedVariant || maxFlavors <= 0) {
+      return null;
+    }
+
+    if (totalFlavorCount === 0) {
+      return {
+        tone: "warning" as const,
+        message: `Selecione pelo menos 1 sabor para este pack (até ${maxFlavors}).`,
+      };
+    }
+
+    if (totalFlavorCount < maxFlavors) {
+      return {
+        tone: "neutral" as const,
+        message: `Faltam ${maxFlavors - totalFlavorCount} sabor(es) para completar o pack.`,
+      };
+    }
+
+    return {
+      tone: "success" as const,
+      message: "Pack completo. Pode adicionar à encomenda.",
+    };
+  }, [maxFlavors, selectedVariant, totalFlavorCount]);
+  const canAddToCart = useMemo(() => {
+    if (!product) return false;
+    if (product.variants && product.variants.length > 0) {
+      if (!selectedVariant) return false;
+      if (maxFlavors > 0 && totalFlavorCount === 0) return false;
+    }
+    return true;
+  }, [maxFlavors, product, selectedVariant, totalFlavorCount]);
 
   const handleFlavorChange = useCallback(
     (flavorId: number, nextValue: number) => {
@@ -182,7 +243,12 @@ export default function ProductDetailScreen() {
     <View style={[styles.safeArea, { backgroundColor: theme.general.screenBackground }]}>
       <StatusBar backgroundColor={theme.colors.primary} barStyle={barStyle} />
       <AppHeader onBack={handleGoBack} />
-      <ScrollView contentContainerStyle={styles.content}>        
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: 160 + Math.max(insets.bottom, 0) },
+        ]}
+      >
 
         {loading ? (
           <View style={styles.loader}>
@@ -249,6 +315,12 @@ export default function ProductDetailScreen() {
                             setSelectedVariant(variant);
                             setFlavorCounts({});
                           }}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Selecionar pack ${variant.name}, ${variant.unit_count} unidades`}
+                          accessibilityHint={
+                            active ? "Pack atualmente selecionado" : "Toque para selecionar este pack"
+                          }
+                          accessibilityState={{ selected: active }}
                         >
                           <Text
                             style={[
@@ -285,6 +357,25 @@ export default function ProductDetailScreen() {
                 <Text style={[styles.helperText, { color: theme.colors.textSecondary }]}>
                   Selecionados: {totalFlavorCount} de {maxFlavors}
                 </Text>
+                {flavorSelectionStatus ? (
+                  <Text
+                    style={[
+                      styles.flavorStatusText,
+                      flavorSelectionStatus.tone === "warning" && {
+                        color: theme.colors.secondary,
+                      },
+                      flavorSelectionStatus.tone === "success" && {
+                        color: theme.colors.accentSuccess,
+                        fontWeight: "600",
+                      },
+                      flavorSelectionStatus.tone === "neutral" && {
+                        color: theme.colors.textSecondary,
+                      },
+                    ]}
+                  >
+                    {flavorSelectionStatus.message}
+                  </Text>
+                ) : null}
                 <View style={styles.flavorList}>
                   {flavors.map((flavor) => (
                     <View key={flavor.id} style={styles.flavorRow}>
@@ -304,23 +395,6 @@ export default function ProductDetailScreen() {
               </View>
             ) : null}
 
-            <View style={styles.cartSection}>
-              <QuantitySelector
-                value={quantity}
-                min={1}
-                max={99}
-                onChange={setQuantity}
-                theme={theme}
-              />
-              <TouchableOpacity
-                style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
-                onPress={handleAddToCart}
-              >
-                <Text style={[styles.addButtonText, { color: theme.colors.textLight }]}>
-                  Adicionar à encomenda
-                </Text>
-              </TouchableOpacity>
-            </View>
           </>
         ) : notFound ? (
           <View style={styles.stateContainer}>
@@ -352,6 +426,77 @@ export default function ProductDetailScreen() {
           </View>
         )}
       </ScrollView>
+
+      {!loading && !loadError && !notFound && product ? (
+        <View
+          style={[
+            styles.stickyFooter,
+            {
+              backgroundColor: theme.colors.cardBackground,
+              borderTopColor: theme.colors.border,
+              paddingBottom: Math.max(insets.bottom, 10),
+            },
+          ]}
+        >
+          <View style={styles.stickyTopRow}>
+            <View style={styles.priceBlock}>
+              <Text style={[styles.priceLabel, { color: theme.colors.textSecondary }]}>
+                {selectedVariant ? "Pack selecionado" : "Preço unitário"}
+              </Text>
+              <Text style={[styles.priceValue, { color: theme.colors.text }]}>
+                {formattedUnitPrice}
+              </Text>
+            </View>
+            <View style={styles.subtotalBlock}>
+              <Text style={[styles.priceLabel, { color: theme.colors.textSecondary }]}>
+                Subtotal
+              </Text>
+              <Text style={[styles.subtotalValue, { color: theme.colors.text }]}>
+                {formattedSubtotal}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.stickyBottomRow}>
+            <QuantitySelector
+              value={quantity}
+              min={1}
+              max={99}
+              onChange={setQuantity}
+              theme={theme}
+              style={styles.footerQuantity}
+            />
+            <TouchableOpacity
+              style={[
+                styles.addButton,
+                { backgroundColor: theme.colors.primary },
+                !canAddToCart && {
+                  backgroundColor: theme.colors.disabledBackground,
+                },
+              ]}
+              onPress={handleAddToCart}
+              disabled={!canAddToCart}
+              accessibilityRole="button"
+              accessibilityLabel="Adicionar produto à encomenda"
+              accessibilityHint={
+                canAddToCart
+                  ? "Adiciona este produto configurado ao carrinho"
+                  : "Selecione os sabores obrigatórios para habilitar"
+              }
+              accessibilityState={{ disabled: !canAddToCart }}
+            >
+              <Text style={[styles.addButtonText, { color: theme.colors.textLight }]}>
+                Adicionar à encomenda
+              </Text>
+            </TouchableOpacity>
+          </View>
+          {flavorSelectionStatus && !canAddToCart ? (
+            <Text style={[styles.footerHint, { color: theme.colors.secondary }]}>
+              {flavorSelectionStatus.message}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -423,10 +568,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
   },
-  cartSection: {
-    marginTop: 24,
-    gap: 16,
-  },
   variantSection: {
     marginTop: 16,
     gap: 12,
@@ -455,6 +596,10 @@ const styles = StyleSheet.create({
   helperText: {
     fontSize: 12,
   },
+  flavorStatusText: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
   flavorList: {
     gap: 12,
   },
@@ -474,10 +619,54 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
   },
   addButtonText: {
     color: "#ffffff",
     fontWeight: "700",
     fontSize: 16,
+  },
+  stickyFooter: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    gap: 12,
+  },
+  stickyTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    gap: 12,
+  },
+  stickyBottomRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  footerQuantity: {
+    alignSelf: "stretch",
+  },
+  priceBlock: {
+    flex: 1,
+  },
+  subtotalBlock: {
+    alignItems: "flex-end",
+  },
+  priceLabel: {
+    fontSize: 12,
+    marginBottom: 2,
+  },
+  priceValue: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  subtotalValue: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  footerHint: {
+    fontSize: 12,
+    lineHeight: 16,
   },
 });

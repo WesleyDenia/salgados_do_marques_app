@@ -39,13 +39,15 @@ export default function OrdersScreen() {
   const { theme } = useThemeMode();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { items, updateQuantity, removeItem, clear, total } = useCart();
-  const { stores, loading: loadingStores, fetchStores } = useStores();
+  const { stores, loading: loadingStores, error: storesError, fetchStores } = useStores();
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const [ordersError, setOrdersError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [settings, setSettings] = useState<OrderSettings | null>(null);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [scheduledAt, setScheduledAt] = useState<Date>(new Date());
   const [hasSelectedDate, setHasSelectedDate] = useState(false);
@@ -94,6 +96,7 @@ export default function OrdersScreen() {
 
   const loadSettings = useCallback(async () => {
     try {
+      setSettingsError(null);
       const { data } = await api.get<{ data: OrderSettings }>("/orders/settings");
       setSettings(data.data);
       const minimum = Math.max(0, Number(data.data.minimum_minutes ?? 0));
@@ -115,17 +118,20 @@ export default function OrdersScreen() {
       }
     } catch (error) {
       console.error("Erro ao carregar settings de encomendas", error);
+      setSettingsError("Não foi possível carregar as regras de agendamento.");
     }
   }, []);
 
   const loadOrders = useCallback(async () => {
     try {
       setLoadingOrders(true);
+      setOrdersError(null);
       const { data } = await api.get("/orders");
       const list = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
       setOrders(list);
     } catch (error) {
       console.error("Erro ao carregar encomendas", error);
+      setOrdersError("Não foi possível carregar suas encomendas.");
     } finally {
       setLoadingOrders(false);
     }
@@ -342,6 +348,37 @@ export default function OrdersScreen() {
     };
   }, [items.length, selectedStore, hasSelectedDate, hasSelectedTime, validateSchedule]);
 
+  const scheduleFlowContext = useMemo(() => {
+    const dateLabel = hasSelectedDate
+      ? scheduledAt.toLocaleDateString("pt-PT")
+      : "data";
+    const timeLabel = hasSelectedTime
+      ? scheduledAt.toLocaleTimeString("pt-PT", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "hora";
+
+    if (!hasSelectedDate) {
+      return {
+        nextStep: "Passo 1 de 3: selecione a data de retirada.",
+        summary: "Retirada ainda não agendada.",
+      };
+    }
+
+    if (!hasSelectedTime) {
+      return {
+        nextStep: "Passo 2 e 3 de 3: selecione hora e minutos da retirada.",
+        summary: `Data selecionada: ${dateLabel}. Falta definir o horário.`,
+      };
+    }
+
+    return {
+      nextStep: "Horário de retirada definido.",
+      summary: `Retirada prevista para ${dateLabel} às ${timeLabel}.`,
+    };
+  }, [hasSelectedDate, hasSelectedTime, scheduledAt]);
+
   return (
     <View style={styles.safeArea}>
       <FlatList
@@ -369,120 +406,161 @@ export default function OrdersScreen() {
             )}
 
             {items.length > 0 && (
-              <View style={styles.card}>
-                {items.map((item) => (
-                  <View key={item.key} style={styles.cartRow}>
-                    <View style={styles.cartInfo}>
-                      <Text style={styles.cartName}>{item.product.name}</Text>
-                      <Text style={styles.cartPrice}>{formatCurrency(item.unitPrice)}</Text>
+              <View style={styles.checkoutSection}>
+                <View style={styles.checkoutSectionHeader}>
+                  <Text style={styles.checkoutSectionTitle}>Checkout atual</Text>
+                  <Text style={styles.checkoutSectionSubtitle}>
+                    Revise os itens e defina a retirada antes de confirmar.
+                  </Text>
+                </View>
+
+                <View style={styles.card}>
+                  {items.map((item) => (
+                    <View key={item.key} style={styles.cartRow}>
+                      <View style={styles.cartInfo}>
+                        <Text style={styles.cartName}>{item.product.name}</Text>
+                        <Text style={styles.cartPrice}>{formatCurrency(item.unitPrice)}</Text>
+                      </View>
+                      {item.variant ? (
+                        <Text style={styles.cartMeta}>
+                          {item.variant.name} • {item.variant.unit_count} unidades
+                        </Text>
+                      ) : null}
+                      {item.flavors && item.flavors.length > 0 ? (
+                        <Text style={styles.cartMeta}>
+                          Sabores:{" "}
+                          {item.flavors
+                            .map((flavor) => `${flavor.name} (${flavor.quantity})`)
+                            .join(", ")}
+                        </Text>
+                      ) : null}
+                      <QuantitySelector
+                        value={item.quantity}
+                        min={1}
+                        max={99}
+                        theme={theme}
+                        onChange={(value) => updateQuantity(item.key, value)}
+                      />
+                      <TouchableOpacity
+                        style={styles.removeButton}
+                        onPress={() => removeItem(item.key)}
+                      >
+                        <Text style={styles.removeText}>Remover</Text>
+                      </TouchableOpacity>
                     </View>
-                    {item.variant ? (
-                      <Text style={styles.cartMeta}>
-                        {item.variant.name} • {item.variant.unit_count} unidades
+                  ))}
+
+                  <View style={styles.totalRow}>
+                    <Text style={styles.totalLabel}>Total estimado</Text>
+                    <Text style={styles.totalValue}>{formatCurrency(total)}</Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.selector}
+                    onPress={() => setStoreModalVisible(true)}
+                  >
+                    <Text style={styles.selectorLabel}>Loja de retirada</Text>
+                    <Text style={styles.selectorValue}>
+                      {selectedStore ? selectedStore.name : "Selecionar loja"}
+                    </Text>
+                  </TouchableOpacity>
+                  {storesError ? (
+                    <View style={styles.inlineErrorBlock}>
+                      <Text style={styles.inlineErrorText}>
+                        {storesError}
                       </Text>
-                    ) : null}
-                    {item.flavors && item.flavors.length > 0 ? (
-                      <Text style={styles.cartMeta}>
-                        Sabores:{" "}
-                        {item.flavors
-                          .map((flavor) => `${flavor.name} (${flavor.quantity})`)
-                          .join(", ")}
-                      </Text>
-                    ) : null}
-                    <QuantitySelector
-                      value={item.quantity}
-                      min={1}
-                      max={99}
-                      theme={theme}
-                      onChange={(value) => updateQuantity(item.key, value)}
-                    />
+                      <TouchableOpacity
+                        style={styles.inlineRetryButton}
+                        onPress={() => {
+                          void fetchStores({ accepts_orders: true });
+                        }}
+                      >
+                        <Text style={styles.inlineRetryText}>Tentar novamente</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : null}
+
+                  <View style={styles.scheduleRow}>
                     <TouchableOpacity
-                      style={styles.removeButton}
-                      onPress={() => removeItem(item.key)}
+                      style={styles.selector}
+                      onPress={() => setShowDatePicker(true)}
                     >
-                      <Text style={styles.removeText}>Remover</Text>
+                      <Text style={styles.selectorLabel}>Data (Passo 1)</Text>
+                      <Text style={styles.selectorValue}>
+                        {hasSelectedDate
+                          ? scheduledAt.toLocaleDateString("pt-PT")
+                          : "Selecionar data"}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.selector, !hasSelectedDate && styles.selectorDisabled]}
+                      onPress={() => setShowHourPicker(true)}
+                      disabled={!hasSelectedDate}
+                    >
+                      <Text style={styles.selectorLabel}>Hora (Passos 2-3)</Text>
+                      <Text style={styles.selectorValue}>
+                        {hasSelectedTime
+                          ? scheduledAt.toLocaleTimeString("pt-PT", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "--:--"}
+                      </Text>
                     </TouchableOpacity>
                   </View>
-                ))}
 
-                <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>Total estimado</Text>
-                  <Text style={styles.totalValue}>{formatCurrency(total)}</Text>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.selector}
-                  onPress={() => setStoreModalVisible(true)}
-                >
-                  <Text style={styles.selectorLabel}>Loja de retirada</Text>
-                  <Text style={styles.selectorValue}>
-                    {selectedStore ? selectedStore.name : "Selecionar loja"}
-                  </Text>
-                </TouchableOpacity>
-
-                <View style={styles.scheduleRow}>
-                  <TouchableOpacity
-                    style={styles.selector}
-                    onPress={() => setShowDatePicker(true)}
-                  >
-                    <Text style={styles.selectorLabel}>Data</Text>
-                    <Text style={styles.selectorValue}>
-                      {hasSelectedDate
-                        ? scheduledAt.toLocaleDateString("pt-PT")
-                        : "Selecionar data"}
+                  {settings ? (
+                    <Text style={styles.helperText}>
+                      Atendemos entre {settings.start_time} e {settings.end_time}. Tempo mínimo: {settings.minimum_minutes} min.
                     </Text>
-                  </TouchableOpacity>
+                  ) : null}
+                  {settingsError ? (
+                    <View style={styles.inlineErrorBlock}>
+                      <Text style={styles.inlineErrorText}>{settingsError}</Text>
+                      <TouchableOpacity
+                        style={styles.inlineRetryButton}
+                        onPress={() => {
+                          void loadSettings();
+                        }}
+                      >
+                        <Text style={styles.inlineRetryText}>Tentar novamente</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : null}
+
+                  <Text style={styles.scheduleSummaryText}>{scheduleFlowContext.summary}</Text>
+                  <Text style={styles.scheduleStepText}>{scheduleFlowContext.nextStep}</Text>
+
+                  <Text
+                    style={[
+                      styles.checkoutStatus,
+                      checkoutReadiness.tone === "success" && styles.checkoutStatusSuccess,
+                      checkoutReadiness.tone === "error" && styles.checkoutStatusError,
+                    ]}
+                  >
+                    {checkoutReadiness.message}
+                  </Text>
 
                   <TouchableOpacity
-                    style={styles.selector}
-                    onPress={() => setShowHourPicker(true)}
-                    disabled={!hasSelectedDate}
+                    style={[
+                      styles.submitButton,
+                      (!checkoutReadiness.ready || submitting) && styles.submitButtonDisabled,
+                    ]}
+                    disabled={submitting || !checkoutReadiness.ready}
+                    onPress={handleSubmit}
                   >
-                    <Text style={styles.selectorLabel}>Hora</Text>
-                    <Text style={styles.selectorValue}>
-                      {hasSelectedTime
-                        ? scheduledAt.toLocaleTimeString("pt-PT", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : "--:--"}
-                    </Text>
+                    {submitting ? (
+                      <ActivityIndicator color={theme.colors.textLight} />
+                    ) : (
+                      <Text style={styles.submitText}>{checkoutReadiness.ctaLabel}</Text>
+                    )}
                   </TouchableOpacity>
                 </View>
-
-                {settings ? (
-                  <Text style={styles.helperText}>
-                    Atendemos entre {settings.start_time} e {settings.end_time}. Tempo mínimo: {settings.minimum_minutes} min.
-                  </Text>
-                ) : null}
-
-                <Text
-                  style={[
-                    styles.checkoutStatus,
-                    checkoutReadiness.tone === "success" && styles.checkoutStatusSuccess,
-                    checkoutReadiness.tone === "error" && styles.checkoutStatusError,
-                  ]}
-                >
-                  {checkoutReadiness.message}
-                </Text>
-
-                <TouchableOpacity
-                  style={[
-                    styles.submitButton,
-                    (!checkoutReadiness.ready || submitting) && styles.submitButtonDisabled,
-                  ]}
-                  disabled={submitting || !checkoutReadiness.ready}
-                  onPress={handleSubmit}
-                >
-                  {submitting ? (
-                    <ActivityIndicator color={theme.colors.textLight} />
-                  ) : (
-                    <Text style={styles.submitText}>{checkoutReadiness.ctaLabel}</Text>
-                  )}
-                </TouchableOpacity>
               </View>
             )}
 
+            <View style={styles.historyDivider} />
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Minhas encomendas</Text>
               <TouchableOpacity
@@ -513,6 +591,18 @@ export default function OrdersScreen() {
         ListEmptyComponent={
           loadingOrders ? (
             <ActivityIndicator color={theme.colors.primary} style={styles.loading} />
+          ) : ordersError ? (
+            <View style={styles.listStateContainer}>
+              <Text style={styles.empty}>{ordersError}</Text>
+              <TouchableOpacity
+                style={styles.inlineRetryButton}
+                onPress={() => {
+                  void loadOrders();
+                }}
+              >
+                <Text style={styles.inlineRetryText}>Tentar novamente</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <Text style={styles.empty}>Nenhuma encomenda encontrada.</Text>
           )
@@ -543,6 +633,7 @@ export default function OrdersScreen() {
               next.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
               setScheduledAt(next);
               setHasSelectedDate(true);
+              setHasSelectedTime(false);
             }
           }}
         />
@@ -594,7 +685,7 @@ export default function OrdersScreen() {
 
       <ListModal
         visible={showHourPicker}
-        title="Selecione a hora"
+        title="Passo 2 de 3: selecione a hora"
         data={allowedHours}
         keyExtractor={(item) => String(item)}
         renderItem={(item) => (
@@ -618,7 +709,7 @@ export default function OrdersScreen() {
 
       <ListModal
         visible={showMinutePicker}
-        title="Selecione os minutos"
+        title="Passo 3 de 3: selecione os minutos"
         data={allowedMinutes(scheduledAt.getHours())}
         keyExtractor={(item) => String(item)}
         renderItem={(item) => (
@@ -686,6 +777,27 @@ const createStyles = (theme: AppTheme) =>
       borderColor: theme.colors.border,
       gap: 16,
     },
+    checkoutSection: {
+      marginTop: 16,
+      padding: 12,
+      borderRadius: 16,
+      backgroundColor: theme.general.surface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: theme.colors.border,
+    },
+    checkoutSectionHeader: {
+      marginBottom: 4,
+      gap: 2,
+    },
+    checkoutSectionTitle: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: theme.colors.text,
+    },
+    checkoutSectionSubtitle: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+    },
     cartRow: {
       gap: 12,
     },
@@ -739,6 +851,9 @@ const createStyles = (theme: AppTheme) =>
       backgroundColor: theme.general.placeholderBackground,
       flex: 1,
     },
+    selectorDisabled: {
+      opacity: 0.6,
+    },
     selectorLabel: {
       fontSize: 12,
       color: theme.colors.textSecondary,
@@ -756,6 +871,41 @@ const createStyles = (theme: AppTheme) =>
     helperText: {
       fontSize: 12,
       color: theme.colors.textSecondary,
+    },
+    inlineErrorBlock: {
+      borderRadius: 10,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.general.surface,
+      padding: 10,
+      gap: 8,
+    },
+    inlineErrorText: {
+      fontSize: 12,
+      color: theme.colors.secondary,
+      lineHeight: 16,
+    },
+    inlineRetryButton: {
+      alignSelf: "flex-start",
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 8,
+      backgroundColor: theme.colors.primary,
+    },
+    inlineRetryText: {
+      color: theme.colors.textLight,
+      fontSize: 12,
+      fontWeight: "700",
+    },
+    scheduleSummaryText: {
+      fontSize: 13,
+      color: theme.colors.text,
+      lineHeight: 18,
+    },
+    scheduleStepText: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      lineHeight: 16,
     },
     checkoutStatus: {
       fontSize: 13,
@@ -796,6 +946,12 @@ const createStyles = (theme: AppTheme) =>
       alignItems: "center",
       justifyContent: "space-between",
     },
+    historyDivider: {
+      marginTop: 20,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: theme.colors.border,
+      opacity: 0.8,
+    },
     filterButton: {
       backgroundColor: theme.colors.primary,
       borderRadius: 5,
@@ -819,6 +975,11 @@ const createStyles = (theme: AppTheme) =>
     },
     loading: {
       marginTop: 20,
+    },
+    listStateContainer: {
+      marginTop: 16,
+      alignItems: "center",
+      gap: 8,
     },
     listItem: {
       paddingVertical: 12,

@@ -98,8 +98,11 @@ export function useCouponsData({ enabled = true }: UseCouponsOptions = {}) {
   }, [enabled, fetchCoupons, fetchMyCoupons]);
 
   useEffect(() => {
+    let cleanup: void | (() => void);
     if (enabled) {
-      const cleanup = loadInitialData();
+      void loadInitialData().then((fn) => {
+        cleanup = fn;
+      });
       return () => {
         if (typeof cleanup === "function") cleanup();
       };
