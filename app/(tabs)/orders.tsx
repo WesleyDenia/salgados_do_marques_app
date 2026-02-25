@@ -287,6 +287,61 @@ export default function OrdersScreen() {
     [loadOrders]
   );
 
+  const checkoutReadiness = useMemo(() => {
+    if (items.length === 0) {
+      return {
+        ready: false,
+        message: "Adicione itens à encomenda para continuar.",
+        tone: "neutral" as const,
+        ctaLabel: "Adicione itens para continuar",
+      };
+    }
+
+    if (!selectedStore) {
+      return {
+        ready: false,
+        message: "Selecione a loja de retirada.",
+        tone: "warning" as const,
+        ctaLabel: "Selecione loja para continuar",
+      };
+    }
+
+    if (!hasSelectedDate) {
+      return {
+        ready: false,
+        message: "Selecione a data de retirada.",
+        tone: "warning" as const,
+        ctaLabel: "Selecione data para continuar",
+      };
+    }
+
+    if (!hasSelectedTime) {
+      return {
+        ready: false,
+        message: "Selecione a hora de retirada.",
+        tone: "warning" as const,
+        ctaLabel: "Selecione hora para continuar",
+      };
+    }
+
+    const scheduleError = validateSchedule();
+    if (scheduleError) {
+      return {
+        ready: false,
+        message: scheduleError,
+        tone: "error" as const,
+        ctaLabel: "Ajuste o horário para confirmar",
+      };
+    }
+
+    return {
+      ready: true,
+      message: "Tudo pronto para confirmar sua encomenda.",
+      tone: "success" as const,
+      ctaLabel: "Confirmar encomenda",
+    };
+  }, [items.length, selectedStore, hasSelectedDate, hasSelectedTime, validateSchedule]);
+
   return (
     <View style={styles.safeArea}>
       <FlatList
@@ -401,15 +456,28 @@ export default function OrdersScreen() {
                   </Text>
                 ) : null}
 
+                <Text
+                  style={[
+                    styles.checkoutStatus,
+                    checkoutReadiness.tone === "success" && styles.checkoutStatusSuccess,
+                    checkoutReadiness.tone === "error" && styles.checkoutStatusError,
+                  ]}
+                >
+                  {checkoutReadiness.message}
+                </Text>
+
                 <TouchableOpacity
-                  style={[styles.submitButton, submitting && styles.submitButtonDisabled]}
-                  disabled={submitting}
+                  style={[
+                    styles.submitButton,
+                    (!checkoutReadiness.ready || submitting) && styles.submitButtonDisabled,
+                  ]}
+                  disabled={submitting || !checkoutReadiness.ready}
                   onPress={handleSubmit}
                 >
                   {submitting ? (
                     <ActivityIndicator color={theme.colors.textLight} />
                   ) : (
-                    <Text style={styles.submitText}>Confirmar encomenda</Text>
+                    <Text style={styles.submitText}>{checkoutReadiness.ctaLabel}</Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -688,6 +756,19 @@ const createStyles = (theme: AppTheme) =>
     helperText: {
       fontSize: 12,
       color: theme.colors.textSecondary,
+    },
+    checkoutStatus: {
+      fontSize: 13,
+      color: theme.colors.textSecondary,
+      lineHeight: 18,
+    },
+    checkoutStatusSuccess: {
+      color: theme.colors.accentSuccess,
+      fontWeight: "600",
+    },
+    checkoutStatusError: {
+      color: theme.colors.secondary,
+      fontWeight: "600",
     },
     submitButton: {
       paddingVertical: 14,

@@ -10,7 +10,7 @@ import React, {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Appearance } from "react-native";
 import api, { setUnauthorizedHandler } from "@/api/api";
-import { User, AppConfig } from "@/types";
+import { User, AppConfig, AuthResponse, LoginPayload, RegisterPayload, toAppConfig } from "@/types";
 import { useThemeMode, ThemeMode } from "@/context/ThemeContext";
 import { getToken, setToken, clearToken } from "@/utils/sessionStorage";
 
@@ -18,7 +18,7 @@ type AuthContextType = {
   user: User | null;
   config: AppConfig | null;
   signIn: (email: string, password: string) => Promise<void>;
-  register: (data: any) => Promise<void>;
+  register: (data: RegisterPayload) => Promise<void>;
   signOut: () => Promise<void>;
   updateUser: (data: Partial<User>) => Promise<void>; 
   loading: boolean;
@@ -80,12 +80,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [persistConfig, setMode]);
 
   async function signIn(email: string, password: string) {
-    const { data } = await api.post("/login", { email, password });
+    const payload: LoginPayload = { email, password };
+    const { data } = await api.post<AuthResponse>("/login", payload);
     const token = data.token || data.access_token;
     const user = data.user;
-    const configData: AppConfig | null = data.config?.assets_base_url
-      ? { assets_base_url: data.config.assets_base_url }
-      : null;
+    const configData: AppConfig | null = toAppConfig(data.config);
     if (!token || !user) throw new Error("Resposta inválida do backend.");
 
     await AsyncStorage.setItem("user", JSON.stringify(user));
@@ -99,13 +98,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function register(data: any) {
-    const response = await api.post("/register", data);
+  async function register(data: RegisterPayload) {
+    const response = await api.post<AuthResponse>("/register", data);
     const token = response.data.token;
     const user = response.data.user;
-    const configData: AppConfig | null = response.data.config?.assets_base_url
-      ? { assets_base_url: response.data.config.assets_base_url }
-      : null;
+    const configData: AppConfig | null = toAppConfig(response.data.config);
+
+    if (!token || !user) throw new Error("Resposta inválida do backend.");
 
     await AsyncStorage.setItem("user", JSON.stringify(user));
     await setToken(token);

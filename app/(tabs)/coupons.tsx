@@ -46,6 +46,9 @@ export default function CouponsScreen() {
         <Text style={[Typography.subtitle, styles.subtitle]}>
           Ative o seu cupom e aproveite os descontos!
         </Text>
+        <Text style={styles.helperText}>
+          Ativar gera seu código de desconto. Depois, use esse código ao finalizar a encomenda.
+        </Text>
 
         {loading ? (
           <ActivityIndicator color={theme.colors.primary} size="large" style={styles.loadingIndicator} />
@@ -103,9 +106,17 @@ const createStyles = (theme: AppTheme, screenTheme: CouponsScreenTheme) =>
     },
     subtitle: {
       textAlign: "center",
-      marginBottom: theme.spacing.md,
+      marginBottom: theme.spacing.xs,
       marginTop: theme.spacing.md,
       color: screenTheme.subtitleColor,
+    },
+    helperText: {
+      textAlign: "center",
+      marginBottom: theme.spacing.md,
+      paddingHorizontal: theme.spacing.lg,
+      color: theme.colors.textSecondary,
+      fontSize: 13,
+      lineHeight: 18,
     },
     listContent: {
       paddingHorizontal: screenTheme.listPaddingHorizontal,

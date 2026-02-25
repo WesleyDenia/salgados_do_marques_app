@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
@@ -95,6 +94,7 @@ export default function VerifyOtpScreen() {
   const [phone, setPhone] = useState(initialPhone);
   const [token, setToken] = useState("");
   const [password, setPassword] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
 
   const { verify, loading, error } = useVerifyOtp();
 
@@ -109,12 +109,28 @@ export default function VerifyOtpScreen() {
     const trimmedToken = token.trim();
     const trimmedPassword = password.trim();
 
-    if (!trimmedPhone || !trimmedToken || trimmedToken.length !== 6 || !trimmedPassword) {
-      Alert.alert("Campos obrigatórios", "Preencha número, código e nova senha.");
+    if (!trimmedPhone) {
+      setFormError("Informe o número do WhatsApp para validar o código.");
+      return;
+    }
+
+    if (!trimmedToken) {
+      setFormError("Informe o código de 6 dígitos recebido.");
+      return;
+    }
+
+    if (trimmedToken.length !== 6) {
+      setFormError("O código deve ter 6 dígitos.");
+      return;
+    }
+
+    if (!trimmedPassword) {
+      setFormError("Informe a nova senha para concluir.");
       return;
     }
 
     try {
+      setFormError(null);
       const response = await verify({
         phone: trimmedPhone,
         token: trimmedToken,
@@ -122,16 +138,13 @@ export default function VerifyOtpScreen() {
       });
 
       const message = response?.message ?? "Senha redefinida com sucesso!";
-
-      Alert.alert("Tudo certo!", message, [
-        {
-          text: "Ir para login",
-          onPress: () => router.replace("/(auth)/login"),
-        },
-      ]);
+      router.replace({
+        pathname: "/(auth)/login",
+        params: { resetSuccess: "1", message },
+      });
     } catch (err: any) {
       const message = getApiErrorMessage(err, error ?? "Código inválido ou expirado.");
-      Alert.alert("Atenção", message);
+      setFormError(message);
     }
   }
 
@@ -150,7 +163,10 @@ export default function VerifyOtpScreen() {
             placeholderTextColor={theme.colors.placeholderText}
             keyboardType="phone-pad"
             value={phone}
-            onChangeText={setPhone}
+            onChangeText={(value) => {
+              setPhone(value);
+              if (formError) setFormError(null);
+            }}
             textContentType="telephoneNumber"
             autoCapitalize="none"
           />
@@ -161,7 +177,10 @@ export default function VerifyOtpScreen() {
             keyboardType="number-pad"
             maxLength={6}
             value={token}
-            onChangeText={setToken}
+            onChangeText={(value) => {
+              setToken(value.replace(/\D/g, ""));
+              if (formError) setFormError(null);
+            }}
             textContentType="oneTimeCode"
             autoCapitalize="none"
           />
@@ -171,9 +190,14 @@ export default function VerifyOtpScreen() {
             placeholderTextColor={theme.colors.placeholderText}
             secureTextEntry
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(value) => {
+              setPassword(value);
+              if (formError) setFormError(null);
+            }}
             textContentType="newPassword"
           />
+
+          {formError ? <ErrorText>{formError}</ErrorText> : null}
 
           <SubmitButton onPress={handleVerify} disabled={loading}>
             {loading ? (
@@ -183,10 +207,14 @@ export default function VerifyOtpScreen() {
             )}
           </SubmitButton>
 
-          {error && <ErrorText>{error}</ErrorText>}
+          {error && !formError ? <ErrorText>{error}</ErrorText> : null}
 
           <TouchableOpacity onPress={() => router.push("/(auth)/forgot-password")}>
             <SecondaryLink>Reenviar código</SecondaryLink>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => router.replace("/(auth)/login")}>
+            <SecondaryLink>Voltar para login</SecondaryLink>
           </TouchableOpacity>
         </Content>
       </KeyboardAvoidingView>

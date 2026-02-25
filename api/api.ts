@@ -2,12 +2,35 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiBaseUrl } from "@/utils/env";
 import { getToken, clearToken, setToken } from "@/utils/sessionStorage";
+import type { AuthResponse } from "@/types";
 
 type UnauthorizedHandler = (() => Promise<void> | void) | null;
 let unauthorizedHandler: UnauthorizedHandler = null;
+let unauthorizedHandling: Promise<void> | null = null;
 
 export function setUnauthorizedHandler(handler: UnauthorizedHandler) {
   unauthorizedHandler = handler;
+}
+
+async function notifyUnauthorized() {
+  if (unauthorizedHandling) {
+    return unauthorizedHandling;
+  }
+
+  unauthorizedHandling = (async () => {
+    if (unauthorizedHandler) {
+      await unauthorizedHandler();
+      return;
+    }
+
+    // Fallback only when AuthContext has not attached a centralized handler yet.
+    await clearToken();
+    await AsyncStorage.multiRemove(["user", "config"]);
+  })().finally(() => {
+    unauthorizedHandling = null;
+  });
+
+  return unauthorizedHandling;
 }
 
 const api = axios.create({
@@ -32,7 +55,7 @@ async function refreshToken(): Promise<string | null> {
 
     try {
       const client = axios.create({ baseURL: api.defaults.baseURL, timeout: 10000 });
-      const { data } = await client.post("/auth/refresh", null, {
+      const { data } = await client.post<AuthResponse>("/auth/refresh", null, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -75,11 +98,7 @@ api.interceptors.response.use(
     }
 
     if (status === 401) {
-      await clearToken();
-      await AsyncStorage.multiRemove(["user", "config"]);
-      if (unauthorizedHandler) {
-        await unauthorizedHandler();
-      }
+      await notifyUnauthorized();
     }
     return Promise.reject(error);
   }

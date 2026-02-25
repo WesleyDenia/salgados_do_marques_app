@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableOpacity,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import styled from "styled-components/native";
@@ -67,6 +73,29 @@ const Input = styled.TextInput`
   background-color: ${({ theme }) => theme.colors.cardBackground};
 `;
 
+const InputRow = styled.View`
+  flex-direction: row;
+  align-items: center;
+  border-width: 1px;
+  border-color: ${({ theme }) => theme.general.borderColor};
+  border-radius: ${({ theme }) => theme.radius.md}px;
+  margin-bottom: ${({ theme }) => theme.spacing.lg}px;
+  background-color: ${({ theme }) => theme.colors.cardBackground};
+`;
+
+const Prefix = styled.Text`
+  padding-left: ${({ theme }) => theme.spacing.lg}px;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 15px;
+  font-weight: 600;
+`;
+
+const PhoneInput = styled.TextInput`
+  flex: 1;
+  padding: ${({ theme }) => theme.spacing.lg}px;
+  color: ${({ theme }) => theme.colors.text};
+`;
+
 const HelperText = styled.Text`
   font-size: 14px;
   color: ${({ theme }) => theme.colors.textSecondary};
@@ -78,6 +107,14 @@ const FeedbackText = styled.Text<{ success?: boolean }>`
   color: ${({ theme, success }) => (success ? theme.colors.accentSuccess : theme.colors.secondary)};
   margin-top: ${({ theme }) => theme.spacing.sm}px;
   text-align: center;
+`;
+
+const SecondaryLink = styled.Text`
+  margin-top: ${({ theme }) => theme.spacing.xl}px;
+  text-align: center;
+  color: ${({ theme }) => theme.colors.secondary};
+  font-size: 15px;
+  font-weight: 600;
 `;
 
 const SubmitButton = styled.TouchableOpacity<{ disabled?: boolean }>`
@@ -104,16 +141,13 @@ export default function ForgotPasswordScreen() {
   const [method, setMethod] = useState<ResetMethod>("whatsapp");
   const [identifier, setIdentifier] = useState("");
   const [phoneDigits, setPhoneDigits] = useState("");
+  const [fieldError, setFieldError] = useState<string | null>(null);
 
   const { send, loading, feedback, error, resetState } = useForgotPassword();
 
-  const placeholder =
-    method === "whatsapp" ? "Número do WhatsApp (+351 999 999 999)" : "E-mail cadastrado";
-
   function formatPhoneDisplay(digits: string) {
     const parts = digits.match(/.{1,3}/g) ?? [];
-    const formatted = parts.join(" ").trim();
-    return formatted ? `+351 ${formatted}` : "+351 ";
+    return parts.join(" ").trim();
   }
 
   function normalizePhoneForApi(digits: string) {
@@ -124,6 +158,7 @@ export default function ForgotPasswordScreen() {
     const digitsOnly = text.replace(/\D/g, "");
     const withoutPrefix = digitsOnly.startsWith("351") ? digitsOnly.slice(3) : digitsOnly;
     setPhoneDigits(withoutPrefix.slice(0, 9));
+    setFieldError(null);
     resetState();
   }
 
@@ -134,11 +169,21 @@ export default function ForgotPasswordScreen() {
         : identifier.trim();
 
     if (!trimmed) {
-      Alert.alert("Campos obrigatórios", "Informe o contato para seguir com a recuperação.");
+      setFieldError(
+        method === "whatsapp"
+          ? "Digite apenas os 9 dígitos do WhatsApp para continuar."
+          : "Informe o e-mail cadastrado para continuar."
+      );
+      return;
+    }
+
+    if (method === "whatsapp" && phoneDigits.length !== 9) {
+      setFieldError("Digite os 9 dígitos do WhatsApp (sem +351).");
       return;
     }
 
     try {
+      setFieldError(null);
       const response = await send({ method, identifier: trimmed });
 
       const message =
@@ -146,8 +191,6 @@ export default function ForgotPasswordScreen() {
         (method === "whatsapp"
           ? "Código enviado via WhatsApp."
           : "Verifique seu e-mail para continuar.");
-
-      Alert.alert("Tudo certo!", message);
 
       if (method === "whatsapp") {
         router.push({
@@ -165,6 +208,7 @@ export default function ForgotPasswordScreen() {
       setMethod(nextMethod);
       setIdentifier("");
       setPhoneDigits("");
+      setFieldError(null);
       resetState();
     }
   }
@@ -191,28 +235,42 @@ export default function ForgotPasswordScreen() {
 
           <HelperText>
             {method === "whatsapp"
-              ? "Informe o número completo com código do país."
+              ? "Digite apenas os 9 dígitos do seu WhatsApp. O prefixo +351 será adicionado automaticamente."
               : "Enviaremos um link seguro para o e-mail informado."}
           </HelperText>
 
-          <Input
-            placeholder={placeholder}
-            placeholderTextColor={theme.colors.placeholderText}
-            keyboardType={method === "whatsapp" ? "phone-pad" : "email-address"}
-            autoCapitalize="none"
-            value={method === "whatsapp" ? formatPhoneDisplay(phoneDigits) : identifier}
-            onChangeText={(text) => {
-              if (method === "whatsapp") {
-                handlePhoneChange(text);
-                return;
-              }
+          {method === "whatsapp" ? (
+            <InputRow>
+              <Prefix>+351</Prefix>
+              <PhoneInput
+                placeholder="999 999 999"
+                placeholderTextColor={theme.colors.placeholderText}
+                keyboardType="phone-pad"
+                autoCapitalize="none"
+                value={formatPhoneDisplay(phoneDigits)}
+                onChangeText={handlePhoneChange}
+                autoCorrect={false}
+                textContentType="telephoneNumber"
+              />
+            </InputRow>
+          ) : (
+            <Input
+              placeholder="E-mail cadastrado"
+              placeholderTextColor={theme.colors.placeholderText}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={identifier}
+              onChangeText={(text) => {
+                setIdentifier(text);
+                setFieldError(null);
+                resetState();
+              }}
+              autoCorrect={false}
+              textContentType="emailAddress"
+            />
+          )}
 
-              setIdentifier(text);
-              resetState();
-            }}
-            autoCorrect={false}
-            textContentType={method === "email" ? "emailAddress" : "telephoneNumber"}
-          />
+          {fieldError ? <FeedbackText>{fieldError}</FeedbackText> : null}
 
           <SubmitButton onPress={handleSubmit} disabled={loading}>
             {loading ? (
@@ -224,6 +282,10 @@ export default function ForgotPasswordScreen() {
 
           {feedback && <FeedbackText success>{feedback}</FeedbackText>}
           {error && <FeedbackText>{error}</FeedbackText>}
+
+          <TouchableOpacity onPress={() => router.replace("/(auth)/login")}>
+            <SecondaryLink>Voltar para login</SecondaryLink>
+          </TouchableOpacity>
         </Content>
       </KeyboardAvoidingView>
     </Container>

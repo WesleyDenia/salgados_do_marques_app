@@ -19,6 +19,7 @@ import { useAuth } from "@/context/AuthContext";
 import { resolveAssetUrl } from "@/utils/url";
 import { useCart } from "@/context/CartContext";
 import { getLoyaltyBannerTheme } from "@/constants/themeLoyalty";
+import { unwrapApiList } from "@/utils/apiResponse";
 
 type MenuProduct = {
   id: number;
@@ -40,6 +41,7 @@ export default function MenuScreen() {
   const [rawProducts, setRawProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const loadProducts = useCallback(async () => {
@@ -48,13 +50,15 @@ export default function MenuScreen() {
     abortRef.current = controller;
 
     try {
+      setLoadError(null);
       setLoading(true);
       const { data } = await api.get("/products", { signal: controller.signal });
-      const list = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+      const list = unwrapApiList<any>(data);
       setRawProducts(list);
     } catch (error: any) {
       if (error?.name === "AbortError" || error?.name === "CanceledError") return;
       console.error("Erro ao carregar produtos", error);
+      setLoadError("Não foi possível carregar o cardápio. Verifique sua conexão e tente novamente.");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -165,6 +169,23 @@ export default function MenuScreen() {
       {loading ? (
         <View style={styles.loader}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
+      ) : loadError ? (
+        <View style={styles.stateContainer}>
+          <Text style={[styles.stateMessage, { color: theme.colors.textSecondary }]}>
+            {loadError}
+          </Text>
+          <TouchableOpacity
+            style={[styles.retryButton, { backgroundColor: theme.colors.primary }]}
+            onPress={() => {
+              setRefreshing(false);
+              void loadProducts();
+            }}
+          >
+            <Text style={[styles.retryButtonText, { color: theme.colors.textLight }]}>
+              Tentar novamente
+            </Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <SectionList
@@ -283,6 +304,27 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  stateContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  stateMessage: {
+    textAlign: "center",
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  retryButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  retryButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
   },
   listContent: {
     paddingHorizontal: 20,

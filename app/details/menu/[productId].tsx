@@ -32,6 +32,8 @@ export default function ProductDetailScreen() {
   const [quantity, setQuantity] = useState(1);
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [flavors, setFlavors] = useState<Flavor[]>([]);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [flavorCounts, setFlavorCounts] = useState<Record<number, number>>({});
@@ -77,6 +79,8 @@ export default function ProductDetailScreen() {
   const loadProduct = useCallback(async () => {
     if (!params.productId) return;
     try {
+      setLoadError(null);
+      setNotFound(false);
       setLoading(true);
       const [productResponse, flavorsResponse] = await Promise.all([
         api.get<{ data: Product }>(`/products/${params.productId}`),
@@ -96,8 +100,16 @@ export default function ProductDetailScreen() {
         : [];
       variants.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
       setSelectedVariant(variants[0] ?? null);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao carregar produto", error);
+      setProduct(null);
+      if (error?.response?.status === 404) {
+        setNotFound(true);
+        setLoadError(null);
+      } else {
+        setNotFound(false);
+        setLoadError("Não foi possível carregar este produto. Verifique sua conexão e tente novamente.");
+      }
     } finally {
       setLoading(false);
     }
@@ -175,6 +187,20 @@ export default function ProductDetailScreen() {
         {loading ? (
           <View style={styles.loader}>
             <ActivityIndicator size="large" color={theme.colors.primary} />
+          </View>
+        ) : loadError ? (
+          <View style={styles.stateContainer}>
+            <Text style={[styles.descriptionFallback, styles.stateText, { color: theme.colors.textSecondary }]}>
+              {loadError}
+            </Text>
+            <TouchableOpacity
+              style={[styles.retryButton, { backgroundColor: theme.colors.primary }]}
+              onPress={() => void loadProduct()}
+            >
+              <Text style={[styles.retryButtonText, { color: theme.colors.textLight }]}>
+                Tentar novamente
+              </Text>
+            </TouchableOpacity>
           </View>
         ) : product ? (
           <>
@@ -296,10 +322,34 @@ export default function ProductDetailScreen() {
               </TouchableOpacity>
             </View>
           </>
+        ) : notFound ? (
+          <View style={styles.stateContainer}>
+            <Text style={[styles.descriptionFallback, styles.stateText, { color: theme.colors.textSecondary }]}>
+              Produto não encontrado.
+            </Text>
+            <TouchableOpacity
+              style={[styles.retryButton, { backgroundColor: theme.colors.primary }]}
+              onPress={handleGoBack}
+            >
+              <Text style={[styles.retryButtonText, { color: theme.colors.textLight }]}>
+                Voltar ao cardápio
+              </Text>
+            </TouchableOpacity>
+          </View>
         ) : (
-          <Text style={[styles.descriptionFallback, { color: theme.colors.textSecondary }]}>
-            Produto não encontrado.
-          </Text>
+          <View style={styles.stateContainer}>
+            <Text style={[styles.descriptionFallback, styles.stateText, { color: theme.colors.textSecondary }]}>
+              Não foi possível carregar este produto.
+            </Text>
+            <TouchableOpacity
+              style={[styles.retryButton, { backgroundColor: theme.colors.primary }]}
+              onPress={() => void loadProduct()}
+            >
+              <Text style={[styles.retryButtonText, { color: theme.colors.textLight }]}>
+                Tentar novamente
+              </Text>
+            </TouchableOpacity>
+          </View>
         )}
       </ScrollView>
     </View>
@@ -315,6 +365,24 @@ const styles = StyleSheet.create({
   loader: {
     paddingVertical: 40,
     alignItems: "center",
+  },
+  stateContainer: {
+    paddingVertical: 32,
+    alignItems: "center",
+    gap: 12,
+  },
+  stateText: {
+    textAlign: "center",
+  },
+  retryButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  retryButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
   },
   backButton: {
     marginBottom: 12,

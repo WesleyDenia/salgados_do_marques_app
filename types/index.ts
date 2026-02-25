@@ -6,3 +6,4 @@ export * from "./config";
 export * from "./store";
 export * from "./order";
 export * from "./flavor";
+export * from "./auth";

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import api from "@/api/api";
 import { ContentHomeBlock } from "@/types/contentHome";
+import { unwrapApiList } from "@/utils/apiResponse";
 
 type UseHomeContentResult = {
   blocks: ContentHomeBlock[];
@@ -30,11 +31,7 @@ export function useHomeContent(): UseHomeContentResult {
       setError(null);
       try {
         const response = await api.get("/content-home", { signal });
-        const raw = Array.isArray(response.data?.data)
-          ? response.data.data
-          : Array.isArray(response.data)
-            ? response.data
-            : [];
+        const raw = unwrapApiList<ContentHomeBlock>(response.data);
 
         setBlocks(normalizeBlocks(raw));
       } catch (err: any) {

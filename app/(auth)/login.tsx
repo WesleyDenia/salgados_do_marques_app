@@ -4,7 +4,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "expo-router";
 import {
   ActivityIndicator,
-  Alert,
   Image,
   Keyboard,
   KeyboardAvoidingView,
@@ -27,28 +26,46 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-   const { theme } = useThemeMode();
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const { theme } = useThemeMode();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   const isValidEmail = (value: string) => /\S+@\S+\.\S+/.test(value.trim());
 
   async function handleLogin() {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert("Campos obrigatórios", "Informe o email e a senha.");
-      return;
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+    let hasError = false;
+
+    setEmailError(null);
+    setPasswordError(null);
+    setFormError(null);
+
+    if (!trimmedEmail) {
+      setEmailError("Informe o email.");
+      hasError = true;
+    } else if (!isValidEmail(trimmedEmail)) {
+      setEmailError("Informe um email válido para continuar.");
+      hasError = true;
     }
 
-    if (!isValidEmail(email)) {
-      Alert.alert("Email inválido", "Informe um email válido para continuar.");
+    if (!trimmedPassword) {
+      setPasswordError("Informe a senha.");
+      hasError = true;
+    }
+
+    if (hasError) {
       return;
     }
 
     try {
       setLoading(true);
-      await signIn(email, password);
+      await signIn(trimmedEmail, trimmedPassword);
       router.replace("/");
     } catch (error: any) {
-      Alert.alert("Erro", getApiErrorMessage(error, "Falha ao fazer login."));
+      setFormError(getApiErrorMessage(error, "Falha ao fazer login."));
     } finally {
       setLoading(false);
     }
@@ -69,28 +86,48 @@ export default function LoginScreen() {
               <Image
                 source={require("@/assets/images/logo_icon.png")}
                 style={styles.logo}
-              />             
+              />
+
+              <Text style={[Typography.title, styles.title]}>Entrar</Text>
+              <Text style={[Typography.subtitle, styles.subtitle]}>
+                Acesse sua conta para acompanhar encomendas, cupons e Coinxinhas.
+              </Text>
 
               <TextInput
-                style={styles.input}
+                style={[styles.input, emailError && styles.inputError]}
                 placeholder="Email"
                 placeholderTextColor={theme.colors.textSecondary}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(value) => {
+                  setEmail(value);
+                  if (emailError) setEmailError(null);
+                  if (formError) setFormError(null);
+                }}
+                autoCorrect={false}
+                textContentType="emailAddress"
               />
+              {emailError ? <Text style={styles.inlineError}>{emailError}</Text> : null}
 
               <TextInput
-                style={styles.input}
+                style={[styles.input, passwordError && styles.inputError]}
                 placeholder="Senha"
                 placeholderTextColor={theme.colors.textSecondary}
                 autoCapitalize="none"
                 autoCorrect={false}
                 secureTextEntry
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(value) => {
+                  setPassword(value);
+                  if (passwordError) setPasswordError(null);
+                  if (formError) setFormError(null);
+                }}
+                textContentType="password"
               />
+              {passwordError ? <Text style={styles.inlineError}>{passwordError}</Text> : null}
+
+              {formError ? <Text style={styles.formError}>{formError}</Text> : null}
 
               <TouchableOpacity
                 style={[styles.button, loading && { opacity: 0.6 }]}
@@ -128,10 +165,16 @@ const createStyles = (theme: AppTheme) =>
       width: 180,
       height: 180,
       alignSelf: "center",
-      marginBottom: 16,
+      marginBottom: 8,
       resizeMode: "contain",
     },
+    title: {
+      textAlign: "center",
+      color: theme.colors.textLight,
+      marginBottom: 8,
+    },
     subtitle: {
+      fontSize: 14,
       marginBottom: 32,
       textAlign: "center",
       color: theme.colors.textLight,
@@ -144,6 +187,25 @@ const createStyles = (theme: AppTheme) =>
       padding: 12,
       marginBottom: 16,
       color: theme.colors.text,
+    },
+    inputError: {
+      borderColor: theme.colors.secondary,
+    },
+    inlineError: {
+      color: theme.colors.textLight,
+      marginTop: -10,
+      marginBottom: 12,
+      fontSize: 12,
+    },
+    formError: {
+      color: theme.colors.textLight,
+      backgroundColor: "#00000022",
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      marginBottom: 16,
+      textAlign: "center",
+      fontSize: 13,
     },
     button: {
       backgroundColor: theme.colors.secondary,

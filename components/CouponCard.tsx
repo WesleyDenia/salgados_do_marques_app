@@ -90,19 +90,25 @@ export default function CouponCard({
             <View style={styles.codeContainer}>
               <Text style={styles.codeLabel}>Código do desconto</Text>
               <Text style={styles.codeValue}>{code ?? "—"}</Text>
+              <Text style={styles.codeHint}>Use este código ao concluir a encomenda.</Text>
             </View>
           ) : showActivateButton ? (
-            <TouchableOpacity
-              style={[styles.button, (disabled || processing) && styles.buttonDisabled]}
-              onPress={onActivate}
-              disabled={disabled || processing}
-            >
-              {processing ? (
-                <ActivityIndicator color={theme.colors.textLight} />
-              ) : (
-                <Text style={styles.buttonText}>Ativar cupom</Text>
-              )}
-            </TouchableOpacity>
+            <View style={styles.actionBlock}>
+              <Text style={styles.actionHint}>
+                Ative para gerar seu código de desconto.
+              </Text>
+              <TouchableOpacity
+                style={[styles.button, (disabled || processing) && styles.buttonDisabled]}
+                onPress={onActivate}
+                disabled={disabled || processing}
+              >
+                {processing ? (
+                  <ActivityIndicator color={theme.colors.textLight} />
+                ) : (
+                  <Text style={styles.buttonText}>Ativar cupom</Text>
+                )}
+              </TouchableOpacity>
+            </View>
           ) : null}
         </View>
       </View>
@@ -201,6 +207,14 @@ const useStyles = (
       borderColor: tokens.codeBorderColor,
       backgroundColor: tokens.cardBackground,
     },
+    actionBlock: {
+      gap: theme.spacing.xs,
+    },
+    actionHint: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      lineHeight: 16,
+    },
     codeLabel: {
       fontSize: 13,
       marginBottom: 4,
@@ -213,5 +227,12 @@ const useStyles = (
       fontWeight: "bold",
       letterSpacing: 1,
       color: theme.colors.text,
+    },
+    codeHint: {
+      marginTop: 6,
+      fontSize: 11,
+      color: theme.colors.textSecondary,
+      textAlign: "center",
+      lineHeight: 15,
     },
   });

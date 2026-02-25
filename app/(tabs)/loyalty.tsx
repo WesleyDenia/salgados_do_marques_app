@@ -111,7 +111,26 @@ export default function LoyaltyScreen() {
       const shouldBlur = !isRedeemed && !canClaim;
       const showLock = !isRedeemed && !canClaim;
       const isProcessing = redeemingId === item.id;
-      const buttonLabel = canClaim ? "Resgatar Premio" : "Bloqueado";
+      const missingPoints =
+        threshold && points < threshold ? Math.max(0, threshold - points) : 0;
+      const buttonLabel = isRedeemed
+        ? "Resgatado"
+        : canClaim
+          ? availableUnits > 1
+            ? `Resgatar (${availableUnits})`
+            : "Resgatar prêmio"
+          : threshold
+            ? `Faltam ${missingPoints}`
+            : "Indisponível";
+      const statusHint = isRedeemed
+        ? "Cupom já resgatado e disponível abaixo."
+        : canClaim
+          ? availableUnits > 1
+            ? `Você pode resgatar até ${availableUnits} unidades.`
+            : "Prêmio disponível para resgate."
+          : threshold
+            ? `Faltam ${missingPoints} Coinxinhas para desbloquear.`
+            : "Recompensa indisponível no momento.";
 
       return (
         <View style={styles.cardWrapper}>
@@ -139,6 +158,9 @@ export default function LoyaltyScreen() {
             </Text>
             <Text style={styles.desc} numberOfLines={2}>
               {threshold ? `${threshold} Coinxinhas` : "Configuração inválida"}
+            </Text>
+            <Text style={[styles.rewardStatusHint, canClaim && styles.rewardStatusHintSuccess]}>
+              {statusHint}
             </Text>
 
             {isRedeemed && displayedCode ? (
@@ -361,8 +383,21 @@ const createStyles = (theme: AppTheme, gridTheme: LoyaltyGridTheme) =>
     },
     desc: {
       fontSize: 13,
-      marginBottom: theme.spacing.md,
+      marginBottom: theme.spacing.xs,
       color: theme.colors.textSecondary,
+    },
+    rewardStatusHint: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      marginBottom: theme.spacing.md,
+      textAlign: "center",
+      paddingHorizontal: theme.spacing.md,
+      lineHeight: 16,
+      minHeight: 32,
+    },
+    rewardStatusHintSuccess: {
+      color: theme.colors.accentSuccess,
+      fontWeight: "600",
     },
     redeemedContainer: {
       width: "100%",
