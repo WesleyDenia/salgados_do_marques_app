@@ -181,7 +181,7 @@ export default function ProductDetailScreen() {
     if (!product) return false;
     if (product.variants && product.variants.length > 0) {
       if (!selectedVariant) return false;
-      if (maxFlavors > 0 && totalFlavorCount === 0) return false;
+      if (maxFlavors > 0 && totalFlavorCount < maxFlavors) return false;
     }
     return true;
   }, [maxFlavors, product, selectedVariant, totalFlavorCount]);
@@ -203,7 +203,7 @@ export default function ProductDetailScreen() {
 
     if (product.variants && product.variants.length > 0) {
       if (!selectedVariant) return;
-      if (maxFlavors > 0 && totalFlavorCount === 0) {
+      if (maxFlavors > 0 && totalFlavorCount < maxFlavors) {
         return;
       }
     }
