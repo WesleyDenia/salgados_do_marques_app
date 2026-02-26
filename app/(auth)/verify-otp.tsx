@@ -46,7 +46,7 @@ const SubmitText = styledNative.Text`
 const ErrorText = styledNative.Text`
   margin-top: ${({ theme }) => theme.spacing.lg}px;
   text-align: center;
-  color: ${({ theme }) => theme.colors.secondary};
+  color: ${({ theme }) => theme.colors.errorText};
   font-size: 14px;
 `;
 
@@ -65,7 +65,7 @@ const StepCallout = styledNative.View`
   border-radius: ${({ theme }) => theme.radius.md}px;
   border-width: 1px;
   border-color: ${({ theme }) => theme.general.borderColor};
-  background-color: ${({ theme }) => theme.general.surface};
+  background-color: ${({ theme }) => theme.general.surfaceElevated};
 `;
 
 const StepCalloutTitle = styledNative.Text`
@@ -84,7 +84,7 @@ const StepCalloutText = styledNative.Text`
 const SecondaryLink = styledNative.Text`
   margin-top: ${({ theme }) => theme.spacing.xl}px;
   text-align: center;
-  color: ${({ theme }) => theme.colors.secondary};
+  color: ${({ theme }) => theme.colors.link};
   font-size: 15px;
   font-weight: 600;
 `;

@@ -494,7 +494,7 @@ const createStyles = (theme: AppTheme) =>
       marginBottom: 16,
     },
     buttonText: { color: theme.colors.textLight },
-    link: { color: theme.colors.secondary, textAlign: "center" },
+    link: { color: theme.colors.link, textAlign: "center" },
     dateInputContainer: {
       position: "relative",
       marginBottom: 16,
@@ -509,7 +509,7 @@ const createStyles = (theme: AppTheme) =>
       paddingHorizontal: 4,
     },
     termsContainer: { marginTop: 8, marginBottom: 24 },
-    termsError: { color: theme.colors.secondary },
+    termsError: { color: theme.colors.errorText },
     checkboxContainer: { flexDirection: "row", alignItems: "center" },
     checkbox: {
       width: 22,
@@ -531,7 +531,7 @@ const createStyles = (theme: AppTheme) =>
       fontWeight: "bold",
     },
     checkboxLabel: { flex: 1, color: theme.colors.textSecondary },
-    linkText: { color: theme.colors.primary, textDecorationLine: "underline" },
+    linkText: { color: theme.colors.link, textDecorationLine: "underline" },
     termsFeedback: {
       flexDirection: "row",
       alignItems: "center",

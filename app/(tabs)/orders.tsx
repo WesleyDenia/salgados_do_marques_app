@@ -925,14 +925,14 @@ const createStyles = (theme: AppTheme) =>
     inlineErrorBlock: {
       borderRadius: 10,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: theme.colors.border,
-      backgroundColor: theme.general.surface,
+      borderColor: theme.general.errorBorder,
+      backgroundColor: theme.general.surfaceElevated,
       padding: 10,
       gap: 8,
     },
     inlineErrorText: {
       fontSize: 12,
-      color: theme.colors.secondary,
+      color: theme.colors.errorText,
       lineHeight: 16,
     },
     inlineRetryButton: {
@@ -963,17 +963,17 @@ const createStyles = (theme: AppTheme) =>
       lineHeight: 18,
     },
     checkoutStatusSuccess: {
-      color: theme.colors.accentSuccess,
+      color: theme.colors.successText,
       fontWeight: "600",
     },
     checkoutStatusError: {
-      color: theme.colors.secondary,
+      color: theme.colors.errorText,
       fontWeight: "600",
     },
     submitButton: {
       paddingVertical: 14,
       borderRadius: 12,
-      backgroundColor: theme.colors.accentSuccess,
+      backgroundColor: theme.colors.primary,
       alignItems: "center",
     },
     submitButtonDisabled: {

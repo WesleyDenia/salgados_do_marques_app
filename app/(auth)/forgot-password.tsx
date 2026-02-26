@@ -77,7 +77,7 @@ const HelperText = styledNative.Text`
 
 const FeedbackText = styledNative.Text<{ success?: boolean }>`
   font-size: 14px;
-  color: ${({ theme, success }) => (success ? theme.colors.accentSuccess : theme.colors.secondary)};
+  color: ${({ theme, success }) => (success ? theme.colors.successText : theme.colors.errorText)};
   margin-top: ${({ theme }) => theme.spacing.sm}px;
   text-align: center;
 `;
@@ -85,7 +85,7 @@ const FeedbackText = styledNative.Text<{ success?: boolean }>`
 const SecondaryLink = styledNative.Text`
   margin-top: ${({ theme }) => theme.spacing.xl}px;
   text-align: center;
-  color: ${({ theme }) => theme.colors.secondary};
+  color: ${({ theme }) => theme.colors.link};
   font-size: 15px;
   font-weight: 600;
 `;

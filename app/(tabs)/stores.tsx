@@ -235,11 +235,11 @@ const createStyles = (theme: AppTheme) =>
       fontSize: 15,
     },
     alertText: {
-      color: theme.colors.secondary,
+      color: theme.colors.warningText,
       fontSize: 14,
     },
     errorText: {
-      color: theme.colors.secondary,
+      color: theme.colors.errorText,
       fontSize: 14,
     },
     filterRow: {
@@ -277,7 +277,7 @@ const createStyles = (theme: AppTheme) =>
       justifyContent: "center",
       paddingVertical: theme.spacing.sm,
       borderRadius: theme.radius.sm,
-      backgroundColor: theme.colors.secondary,
+      backgroundColor: theme.colors.primary,
       marginBottom: theme.spacing.md,
     },
     locationButtonText: {

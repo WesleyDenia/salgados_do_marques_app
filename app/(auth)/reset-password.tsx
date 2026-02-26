@@ -41,7 +41,7 @@ const SubmitText = styledNative.Text`
 
 const TokenAlert = styledNative.Text`
   text-align: center;
-  color: ${({ theme }) => theme.colors.secondary};
+  color: ${({ theme }) => theme.colors.warningText};
   margin-top: ${({ theme }) => theme.spacing.xl}px;
   font-size: 14px;
 `;
@@ -49,7 +49,7 @@ const TokenAlert = styledNative.Text`
 const InlineError = styledNative.Text`
   margin-top: ${({ theme }) => theme.spacing.md}px;
   text-align: center;
-  color: ${({ theme }) => theme.colors.secondary};
+  color: ${({ theme }) => theme.colors.errorText};
   font-size: 14px;
 `;
 
@@ -66,7 +66,7 @@ const StepCallout = styledNative.View`
   border-radius: ${({ theme }) => theme.radius.md}px;
   border-width: 1px;
   border-color: ${({ theme }) => theme.general.borderColor};
-  background-color: ${({ theme }) => theme.general.surface};
+  background-color: ${({ theme }) => theme.general.surfaceElevated};
 `;
 
 const StepCalloutTitle = styledNative.Text`

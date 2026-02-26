@@ -84,7 +84,7 @@ export default function PrivacyTermsScreen() {
         ) : null}
 
         {!loading && error ? (
-          <Text style={[styles.errorText, { color: theme.colors.secondary }]}>{error}</Text>
+          <Text style={[styles.errorText, { color: theme.colors.errorText }]}>{error}</Text>
         ) : null}
 
         {!loading && !error && terms ? (

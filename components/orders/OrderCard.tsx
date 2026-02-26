@@ -36,7 +36,7 @@ const getStatusColors = (status: Order["status"], theme: AppTheme) => {
     case "rejected":
     case "canceled":
       return {
-        background: theme.colors.secondary,
+        background: theme.colors.errorFill,
         text: theme.colors.textLight,
       };
     case "done":

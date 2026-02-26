@@ -10,11 +10,19 @@ const palette = {
     background: "#edebf4ff",
     backgroundButton: "#fff0e6",
     cardBackground: "#ffffffff",
-    surface: "#ffffff",    
+    surface: "#ffffff",
+    surfaceElevated: "#f8f8fb",
     text: "#2a2a2a",
     textSecondary: "#7a7a7a",
+    textMuted: "#8f8f8f",
     textLight: "#ffffff",
+    successText: "#1f8f4b",
+    errorText: "#c62828",
+    warningText: "#b26a00",
+    infoText: "#1565c0",
+    link: "#910202",
     accentSuccess: "#25d366",
+    errorFill: "#b71c1c",
     placeholderBackground: "#eeeeee",
     placeholderText: "#7a7a7a",
     border: "rgba(0,0,0,0.05)",
@@ -24,19 +32,27 @@ const palette = {
   dark: {
     primary: "#910202",
     secondary: "#4e0101ff",
-    background: "#141414ff",
-    backgroundButton: "#fff0e6",
-    cardBackground: "#262626ff",
-    surface: "#141414ff",
-    text: "#d3d3d3ff",
-    textSecondary: "#a1a1a1ff",
-    textLight: "#e6e6e6ff",
-    accentSuccess: "#434242ff",
-    placeholderBackground: "#161e2bff",
-    placeholderText: "#d1d5db",
-    border: "rgba(255,255,255,0.08)",
-    disabledBackground: "#2d3d58ff",
-    activatedButton: "#726e8dff",
+    background: "#121212",
+    backgroundButton: "#2a1b1b",
+    cardBackground: "#202020",
+    surface: "#1a1a1a",
+    surfaceElevated: "#242424",
+    text: "#f2f2f2",
+    textSecondary: "#c2c2c2",
+    textMuted: "#9a9a9a",
+    textLight: "#ffffff",
+    successText: "#5ee38a",
+    errorText: "#ff8a8a",
+    warningText: "#ffd166",
+    infoText: "#7ccbff",
+    link: "#ff9f9f",
+    accentSuccess: "#1f8f4b",
+    errorFill: "#a61e1e",
+    placeholderBackground: "#1f1f1f",
+    placeholderText: "#b8bdc6",
+    border: "rgba(255,255,255,0.10)",
+    disabledBackground: "#303846",
+    activatedButton: "#335d47",
   },
 } as const;
 
@@ -92,12 +108,20 @@ const shadowPresets: Record<"card" | "subtle", ShadowPreset> = {
 type ThemeColors = {
   text: string;
   textSecondary: string;
+  textMuted: string;
   textLight: string;
+  successText: string;
+  errorText: string;
+  warningText: string;
+  infoText: string;
+  link: string;
   background: string;
   surface: string;
+  surfaceElevated: string;
   primary: string;
   secondary: string;
   accentSuccess: string;
+  errorFill: string;
   placeholderBackground: string;
   placeholderText: string;
   border: string;
@@ -123,7 +147,10 @@ type ThemeDefinition = {
     placeholderBackground: string;
     placeholderText: string;
     successBorder: string;
+    errorBorder: string;
+    warningBorder: string;
     disabledBackground: string;
+    surfaceElevated: string;
   };
 };
 
@@ -131,12 +158,20 @@ const lightTheme: ThemeDefinition = {
   colors: {
     text: palette.light.text,
     textSecondary: palette.light.textSecondary,
+    textMuted: palette.light.textMuted,
     textLight: palette.light.textLight,
+    successText: palette.light.successText,
+    errorText: palette.light.errorText,
+    warningText: palette.light.warningText,
+    infoText: palette.light.infoText,
+    link: palette.light.link,
     background: palette.light.background,
     surface: palette.light.surface,
+    surfaceElevated: palette.light.surfaceElevated,
     primary: palette.light.primary,
     secondary: palette.light.secondary,
     accentSuccess: palette.light.accentSuccess,
+    errorFill: palette.light.errorFill,
     placeholderBackground: palette.light.placeholderBackground,
     placeholderText: palette.light.placeholderText,
     border: palette.light.border,
@@ -159,7 +194,10 @@ const lightTheme: ThemeDefinition = {
     placeholderBackground: palette.light.placeholderBackground,
     placeholderText: palette.light.placeholderText,
     successBorder: palette.light.accentSuccess,
+    errorBorder: palette.light.errorFill,
+    warningBorder: palette.light.warningText,
     disabledBackground: palette.light.disabledBackground,
+    surfaceElevated: palette.light.surfaceElevated,
   },
 };
 
@@ -167,12 +205,20 @@ const darkTheme: ThemeDefinition = {
   colors: {
     text: palette.dark.text,
     textSecondary: palette.dark.textSecondary,
+    textMuted: palette.dark.textMuted,
     textLight: palette.dark.textLight,
+    successText: palette.dark.successText,
+    errorText: palette.dark.errorText,
+    warningText: palette.dark.warningText,
+    infoText: palette.dark.infoText,
+    link: palette.dark.link,
     background: palette.dark.background,
     surface: palette.dark.surface,
+    surfaceElevated: palette.dark.surfaceElevated,
     primary: palette.dark.primary,
     secondary: palette.dark.secondary,
     accentSuccess: palette.dark.accentSuccess,
+    errorFill: palette.dark.errorFill,
     placeholderBackground: palette.dark.placeholderBackground,
     placeholderText: palette.dark.placeholderText,
     border: palette.dark.border,
@@ -195,7 +241,10 @@ const darkTheme: ThemeDefinition = {
     placeholderBackground: palette.dark.placeholderBackground,
     placeholderText: palette.dark.placeholderText,
     successBorder: palette.dark.accentSuccess,
+    errorBorder: palette.dark.errorFill,
+    warningBorder: palette.dark.warningText,
     disabledBackground: palette.dark.disabledBackground,
+    surfaceElevated: palette.dark.surfaceElevated,
   },
 };
 

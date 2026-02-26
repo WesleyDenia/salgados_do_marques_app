@@ -372,7 +372,7 @@ const createStyles = (theme: AppTheme, gridTheme: LoyaltyGridTheme) =>
       borderRadius: theme.radius.md,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: theme.general.successBorder,
-      backgroundColor: theme.colors.cardBackground,
+      backgroundColor: theme.general.surfaceElevated,
       padding: theme.spacing.md,
       gap: theme.spacing.sm,
     },
@@ -447,7 +447,7 @@ const createStyles = (theme: AppTheme, gridTheme: LoyaltyGridTheme) =>
       minHeight: 32,
     },
     rewardStatusHintSuccess: {
-      color: theme.colors.accentSuccess,
+      color: theme.colors.successText,
       fontWeight: "600",
     },
     redeemedContainer: {

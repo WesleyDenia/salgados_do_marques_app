@@ -362,10 +362,10 @@ export default function ProductDetailScreen() {
                     style={[
                       styles.flavorStatusText,
                       flavorSelectionStatus.tone === "warning" && {
-                        color: theme.colors.secondary,
+                        color: theme.colors.warningText,
                       },
                       flavorSelectionStatus.tone === "success" && {
-                        color: theme.colors.accentSuccess,
+                        color: theme.colors.successText,
                         fontWeight: "600",
                       },
                       flavorSelectionStatus.tone === "neutral" && {
@@ -491,7 +491,7 @@ export default function ProductDetailScreen() {
             </TouchableOpacity>
           </View>
           {flavorSelectionStatus && !canAddToCart ? (
-            <Text style={[styles.footerHint, { color: theme.colors.secondary }]}>
+            <Text style={[styles.footerHint, { color: theme.colors.warningText }]}>
               {flavorSelectionStatus.message}
             </Text>
           ) : null}
