@@ -23,6 +23,7 @@ import { Calendar } from "lucide-react-native";
 import { getApiErrorMessage } from "@/utils/errorMessage";
 import { useThemeMode } from "@/context/ThemeContext";
 import AuthScreenLayout from "@/components/auth/AuthScreenLayout";
+import { getInteractiveFieldStyles } from "@/components/ui/InteractiveField";
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -48,6 +49,13 @@ export default function RegisterScreen() {
   } | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState(new Date());
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  const getInputStyle = (field: string, additionalStyle?: object) => [
+    styles.input,
+    focusedField === field && styles.inputFocused,
+    additionalStyle,
+  ];
 
   useEffect(() => {
     let active = true;
@@ -264,21 +272,25 @@ export default function RegisterScreen() {
                 <Text style={styles.sectionHint}>Informações principais para criar a sua conta.</Text>
 
               <TextInput
-                style={styles.input}
+                style={getInputStyle("name")}
                 placeholder="Nome"
-                placeholderTextColor={theme.colors.textSecondary}
+                placeholderTextColor={theme.colors.inputPlaceholder}
                 value={name}
                 onChangeText={setName}
+                onFocus={() => setFocusedField("name")}
+                onBlur={() => setFocusedField(null)}
               />
 
               <TextInput
-                style={styles.input}
+                style={getInputStyle("email")}
                 placeholder="Email"
-                placeholderTextColor={theme.colors.textSecondary}
+                placeholderTextColor={theme.colors.inputPlaceholder}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 value={email}
                 onChangeText={setEmail}
+                onFocus={() => setFocusedField("email")}
+                onBlur={() => setFocusedField(null)}
               />
               </View>
 
@@ -288,9 +300,9 @@ export default function RegisterScreen() {
                   O telefone será usado para contacto e recuperação via WhatsApp.
                 </Text>
               <TextInput
-                style={styles.input}
+                style={getInputStyle("phone")}
                 placeholder="Telefone"
-                placeholderTextColor={theme.colors.textSecondary}
+                placeholderTextColor={theme.colors.inputPlaceholder}
                 keyboardType="phone-pad"
                 value={formatPhoneDisplay(phoneDigits)}
                 onChangeText={(text) => {
@@ -298,27 +310,33 @@ export default function RegisterScreen() {
                   setPhoneDigits(digitsOnly.slice(0, 9));
                 }}
                 textContentType="telephoneNumber"
+                onFocus={() => setFocusedField("phone")}
+                onBlur={() => setFocusedField(null)}
               />
               <Text style={styles.inlineHelper}>Digite apenas o número. O prefixo +351 é aplicado automaticamente.</Text>
 
               <TextInput
-                style={styles.input}
+                style={getInputStyle("nif")}
                 placeholder="NIF (opcional)"
-                placeholderTextColor={theme.colors.textSecondary}
+                placeholderTextColor={theme.colors.inputPlaceholder}
                 keyboardType="numeric"
                 value={nif}
                 onChangeText={setNif}
+                onFocus={() => setFocusedField("nif")}
+                onBlur={() => setFocusedField(null)}
               />
               <Text style={styles.inlineHelper}>NIF e data de nascimento são opcionais.</Text>
 
               <View style={styles.dateInputContainer}>
                 <TextInput
-                  style={[styles.input, styles.dateInput]}
+                  style={getInputStyle("birthDate", styles.dateInput)}
                   placeholder="Data de nascimento (YYYY-MM-DD)"
-                  placeholderTextColor={theme.colors.textSecondary}
+                  placeholderTextColor={theme.colors.inputPlaceholder}
                   keyboardType="numbers-and-punctuation"
                   value={birthDate}
                   onChangeText={handleBirthDateChange}
+                  onFocus={() => setFocusedField("birthDate")}
+                  onBlur={() => setFocusedField(null)}
                 />
                 <TouchableOpacity
                   style={styles.calendarButton}
@@ -337,25 +355,29 @@ export default function RegisterScreen() {
                   Defina uma senha segura com pelo menos 8 caracteres, usando letras e números.
                 </Text>
               <TextInput
-                style={styles.input}
+                style={getInputStyle("password")}
                 placeholder="Senha"
-                placeholderTextColor={theme.colors.textSecondary}
+                placeholderTextColor={theme.colors.inputPlaceholder}
                 autoCapitalize="none"
                 autoCorrect={false}
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
+                onFocus={() => setFocusedField("password")}
+                onBlur={() => setFocusedField(null)}
               />
 
               <TextInput
-                style={styles.input}
+                style={getInputStyle("confirm")}
                 placeholder="Confirmar Senha"
-                placeholderTextColor={theme.colors.textSecondary}
+                placeholderTextColor={theme.colors.inputPlaceholder}
                 autoCapitalize="none"
                 autoCorrect={false}
                 secureTextEntry
                 value={confirm}
                 onChangeText={setConfirm}
+                onFocus={() => setFocusedField("confirm")}
+                onBlur={() => setFocusedField(null)}
               />
               </View>
 
@@ -471,13 +493,14 @@ const createStyles = (theme: AppTheme) =>
       marginBottom: 12,
     },
     input: {
-      backgroundColor: theme.colors.cardBackground,
-      borderWidth: 1,
-      borderColor: theme.colors.tabIconDefault,
+      ...getInteractiveFieldStyles(theme, { variant: "input", state: "default" }),
       borderRadius: 8,
       padding: 12,
       marginBottom: 16,
-      color: theme.colors.text,
+      color: theme.colors.inputText,
+    },
+    inputFocused: {
+      ...getInteractiveFieldStyles(theme, { variant: "input", state: "focus" }),
     },
     inlineHelper: {
       marginTop: -8,

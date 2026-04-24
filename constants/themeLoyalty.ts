@@ -31,12 +31,12 @@ export const getLoyaltyBannerTheme = (theme: AppTheme): LoyaltyBannerTheme => ({
   paddingHorizontal: theme.spacing.lg,
   coinIcon: 45,
   progressHeight: 6,
-  progressColor: "#ffd700",
-  progressTrack: "rgba(255,255,255,0.3)",
-  milestoneColor: theme.colors.textLight,
-  backgroundColor: "#4e0101ff",
-  rewardButtonBackground: "#ffffff",
-  rewardButtonText: "#8B4513",
+  progressColor: theme.colors.loyaltyProgressFill,
+  progressTrack: theme.colors.loyaltyProgressTrack,
+  milestoneColor: theme.colors.textOnBrand,
+  backgroundColor: theme.colors.secondary,
+  rewardButtonBackground: theme.colors.surface,
+  rewardButtonText: theme.colors.brandOnSurface,
 });
 
 export const getLoyaltyGridTheme = (theme: AppTheme): LoyaltyGridTheme => ({
@@ -47,9 +47,7 @@ export const getLoyaltyGridTheme = (theme: AppTheme): LoyaltyGridTheme => ({
   cardRadius: theme.radius.lg,
   borderColor: theme.colors.border,
   imageRadius: theme.radius.md,
-  lockOverlayColor: theme.colors.background === "#1f2937"
-    ? "rgba(0,0,0,0.6)"
-    : "rgba(213, 213, 213, 0.85)",
+  lockOverlayColor: theme.colors.loyaltyLockOverlay,
   disabledButtonBackground: theme.colors.disabledBackground,
   lockOverlaySize: 36,
 });

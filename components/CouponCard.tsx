@@ -22,6 +22,8 @@ type CouponCardProps = {
   tokens: CouponCardTheme;
   active: boolean;
   code?: string | null;
+  statusTitle?: string | null;
+  statusHint?: string | null;
   processing?: boolean;
   disabled?: boolean;
   onActivate?: () => void;
@@ -36,6 +38,8 @@ export default function CouponCard({
   tokens,
   active,
   code,
+  statusTitle,
+  statusHint,
   processing = false,
   disabled = false,
   onActivate,
@@ -43,9 +47,12 @@ export default function CouponCard({
   imageRatio = 0.4,
   onPress,
 }: CouponCardProps) {
-  const imageFlex = Math.max(0.1, Math.min(imageRatio, 0.9));
-  const infoFlex = 1 - imageFlex;
-  const styles = useStyles(theme, tokens, imageFlex, infoFlex);
+  // `imageRatio` was previously used as horizontal split (image/info).
+  // In the vertical layout, reinterpret it as a rough image height factor.
+  const imageHeight = Math.round(
+    tokens.imageMaxHeight * Math.max(0.8, Math.min(imageRatio / 0.4, 1.15))
+  );
+  const styles = useStyles(theme, tokens, imageHeight);
   const { config } = useAuth();
   const assetUri = resolveAssetUrl(coupon.image_url, config?.assets_base_url);
   const imageSource = assetUri ? { uri: assetUri } : undefined;
@@ -57,6 +64,8 @@ export default function CouponCard({
 
   const showActivateButton = !active && typeof onActivate === "function";
   const canCopyCode = active && typeof code === "string" && code.trim().length > 0;
+  const originLabel = coupon.origin?.label;
+  const partnerName = coupon.origin?.partner?.name;
 
   async function handleCopyCode() {
     if (!canCopyCode) return;
@@ -84,6 +93,11 @@ export default function CouponCard({
 
         <View style={styles.infoWrapper}>
           <View>
+            {originLabel ? (
+              <View style={styles.originBadge}>
+                <Text style={styles.originBadgeText}>{originLabel}</Text>
+              </View>
+            ) : null}
             <Text style={styles.expiration}>
               {coupon.ends_at
                 ? `Válido até ${new Date(coupon.ends_at).toLocaleDateString()}`
@@ -93,6 +107,7 @@ export default function CouponCard({
             {coupon.title}
           </Text>
           <Text style={styles.discount}>{discountLabel}</Text>
+          {partnerName ? <Text style={styles.partnerText}>{partnerName}</Text> : null}
           </View>
 
           {active ? (
@@ -123,6 +138,11 @@ export default function CouponCard({
                 )}
               </TouchableOpacity>
             </View>
+          ) : statusTitle ? (
+            <View style={styles.stateContainer}>
+              <Text style={styles.stateTitle}>{statusTitle}</Text>
+              {statusHint ? <Text style={styles.stateHint}>{statusHint}</Text> : null}
+            </View>
           ) : null}
         </View>
       </View>
@@ -133,8 +153,7 @@ export default function CouponCard({
 const useStyles = (
   theme: AppTheme,
   tokens: CouponCardTheme,
-  imageFlex: number,
-  infoFlex: number
+  imageHeight: number
 ) =>
   StyleSheet.create({
     shadowWrapper: {
@@ -145,7 +164,6 @@ const useStyles = (
     },
     container: {
       width: "100%",
-      flexDirection: "row",
       borderRadius: tokens.borderRadius,
       borderWidth: tokens.borderWidth,
       borderColor: theme.general.borderColor,
@@ -153,9 +171,10 @@ const useStyles = (
       overflow: "hidden",
     },
     imageWrapper: {
-      flex: imageFlex,
-      maxHeight: tokens.imageMaxHeight,
+      width: "100%",
+      height: Math.min(imageHeight, tokens.imageMaxHeight),
       alignSelf: "stretch",
+      backgroundColor: tokens.placeholderBackground,
     },
     image: {
       width: "100%",
@@ -172,15 +191,29 @@ const useStyles = (
       color: tokens.placeholderText,
     },
     infoWrapper: {
-      flex: infoFlex,
       padding: tokens.contentPadding,
-      justifyContent: "space-between",
+      gap: theme.spacing.sm,
       backgroundColor: tokens.cardBackground,
     },
     expiration: {
       fontSize: 12,
       color: theme.colors.textSecondary,
       marginBottom: theme.spacing.xs,
+    },
+    originBadge: {
+      alignSelf: "flex-start",
+      marginBottom: theme.spacing.xs,
+      paddingHorizontal: theme.spacing.sm,
+      paddingVertical: theme.spacing.xxs,
+      borderRadius: theme.radius.pill,
+      backgroundColor: theme.colors.primary,
+    },
+    originBadgeText: {
+      color: theme.colors.textLight,
+      fontSize: 11,
+      fontWeight: "700",
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
     },
     title: {
       fontSize: 18,
@@ -193,6 +226,11 @@ const useStyles = (
       fontWeight: "600",
       color: theme.colors.textSecondary,
       marginBottom: theme.spacing.xs,
+    },
+    partnerText: {
+      fontSize: 13,
+      color: theme.colors.brandOnSurface,
+      fontWeight: "600",
     },
     body: {
       fontSize: 14,
@@ -229,6 +267,27 @@ const useStyles = (
       color: theme.colors.textSecondary,
       lineHeight: 16,
     },
+    stateContainer: {
+      paddingVertical: tokens.codePaddingVertical,
+      borderRadius: tokens.codeBorderRadius,
+      borderWidth: tokens.codeBorderWidth,
+      borderColor: tokens.codeBorderColor,
+      backgroundColor: tokens.cardBackground,
+      paddingHorizontal: theme.spacing.sm,
+      gap: theme.spacing.xxs,
+    },
+    stateTitle: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: theme.colors.text,
+      textAlign: "center",
+    },
+    stateHint: {
+      fontSize: 12,
+      lineHeight: 16,
+      color: theme.colors.textSecondary,
+      textAlign: "center",
+    },
     codeLabel: {
       fontSize: 13,
       marginBottom: 4,
@@ -255,11 +314,11 @@ const useStyles = (
       paddingVertical: theme.spacing.xs,
       borderRadius: theme.radius.sm,
       borderWidth: 1,
-      borderColor: theme.colors.primary,
+      borderColor: theme.colors.brandOnSurface,
       backgroundColor: theme.general.surface,
     },
     copyButtonText: {
-      color: theme.colors.primary,
+      color: theme.colors.brandOnSurface,
       fontWeight: "600",
       fontSize: 12,
       textTransform: "uppercase",

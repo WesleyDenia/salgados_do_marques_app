@@ -13,14 +13,20 @@ import { getApiErrorMessage } from "@/utils/errorMessage";
 import AuthScreenLayout from "@/components/auth/AuthScreenLayout";
 import { ResetPasswordResponse } from "@/types";
 import { unwrapApiObject } from "@/utils/apiResponse";
+import { getInteractiveFieldColors } from "@/components/ui/InteractiveField";
 
-const Input = styledNative.TextInput`
+const Input = styledNative.TextInput<{ $focused?: boolean; $error?: boolean }>`
   border-width: 1px;
-  border-color: ${({ theme }) => theme.general.borderColor};
+  border-color: ${({ theme, $focused, $error }) => {
+    const colors = getInteractiveFieldColors(theme);
+    if ($error) return theme.colors.errorText;
+    if ($focused) return colors.inputBorderFocus;
+    return colors.inputBorder;
+  }};
   border-radius: ${({ theme }) => theme.radius.md}px;
   padding: ${({ theme }) => theme.spacing.lg}px;
-  color: ${({ theme }) => theme.colors.text};
-  background-color: ${({ theme }) => theme.colors.cardBackground};
+  color: ${({ theme }) => theme.colors.inputText};
+  background-color: ${({ theme }) => theme.colors.inputSurface};
 `;
 
 const SubmitButton = styledNative.TouchableOpacity<{ disabled?: boolean }>`
@@ -91,6 +97,7 @@ export default function ResetPasswordScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
   async function handleReset() {
     const trimmedPassword = password.trim();
@@ -152,8 +159,10 @@ export default function ResetPasswordScreen() {
 
           <View>
             <Input
+              $focused={isPasswordFocused}
+              $error={!!formError}
               placeholder="Nova senha"
-              placeholderTextColor={theme.colors.placeholderText}
+              placeholderTextColor={theme.colors.inputPlaceholder}
               secureTextEntry
               value={password}
               onChangeText={(value) => {
@@ -162,6 +171,8 @@ export default function ResetPasswordScreen() {
               }}
               textContentType="newPassword"
               autoCapitalize="none"
+              onFocus={() => setIsPasswordFocused(true)}
+              onBlur={() => setIsPasswordFocused(false)}
             />
             <HelperText>Use pelo menos 8 caracteres para uma senha mais segura.</HelperText>
           </View>

@@ -62,7 +62,7 @@ export default function AppHeader({ onBack }: AppHeaderProps = {}) {
 
       {/* Coinxinhas à direita */}
       <TouchableOpacity onPress={() => router.push("/(tabs)/loyalty")}>
-        <View style={styles.coinxinhasContainer}>
+        <View style={[styles.coinxinhasContainer, { backgroundColor: theme.colors.headerGlass }]}>
           <Image
             source={require("@/assets/icons/coinxinha.png")}
             style={styles.coinxinhaIcon}
@@ -70,7 +70,7 @@ export default function AppHeader({ onBack }: AppHeaderProps = {}) {
           {loading ? (
             <ActivityIndicator color={theme.colors.textLight} size="small" />
           ) : (
-            <Text style={[styles.coinxinhasText, { color: theme.colors.textLight }]}>
+            <Text style={[styles.coinxinhasText, { color: theme.colors.textOnBrand }]}>
               {points}
             </Text>
           )}
@@ -104,7 +104,6 @@ const styles = StyleSheet.create({
   coinxinhasContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#ffffff33",
     borderRadius: 20,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -115,7 +114,6 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   coinxinhasText: {
-    color: "#fff",
     fontWeight: "bold",
   },
 });

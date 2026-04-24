@@ -13,6 +13,7 @@ import { useThemeMode } from "@/context/ThemeContext";
 import { AppTheme, resolveShadow } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
 import { resolveAssetUrl } from "@/utils/url";
+import { getInternalCtaLabel, parseContentHomeBody } from "@/utils/contentHomeTokens";
 
 type HomeContentListProps = {
   blocks: ContentHomeBlock[];
@@ -75,6 +76,41 @@ function HomeContentListComponent({ blocks, renderComponent }: HomeContentListPr
     }
   }, []);
 
+  const renderBodySegments = useCallback(
+    (body: string | null, keyPrefix: string) => {
+      const segments = parseContentHomeBody(body);
+
+      if (!segments.length) {
+        return null;
+      }
+
+      return segments.map((segment, index) => {
+        if (segment.type === "text") {
+          if (!segment.value.trim()) {
+            return null;
+          }
+
+          return (
+            <Text key={`${keyPrefix}-text-${index}`} style={styles.body}>
+              {segment.value.trim()}
+            </Text>
+          );
+        }
+
+        return (
+          <TouchableOpacity
+            key={`${keyPrefix}-cta-${index}`}
+            style={styles.ctaButton}
+            onPress={() => router.push(segment.route as never)}
+          >
+            <Text style={styles.ctaButtonText}>{getInternalCtaLabel(segment.route)}</Text>
+          </TouchableOpacity>
+        );
+      });
+    },
+    [router, styles.body, styles.ctaButton, styles.ctaButtonText],
+  );
+
   if (!blocks.length) {
     return null;
   }
@@ -93,6 +129,9 @@ function HomeContentListComponent({ blocks, renderComponent }: HomeContentListPr
               key={`${block.id}-${block.display_order}-component`}
               style={[styles.componentContainer, index !== blocks.length - 1 && styles.blockSpacing]}
             >
+              {block.show_component_title !== false && block.title ? (
+                <Text style={styles.componentTitle}>{block.title}</Text>
+              ) : null}
               {rendered}
             </View>
           );
@@ -108,15 +147,18 @@ function HomeContentListComponent({ blocks, renderComponent }: HomeContentListPr
           : { backgroundColor: theme.general.surface };
         const isLast = index === blocks.length - 1;
 
-        const content =
-          !isImageFocused && (block.title || block.text_body || block.cta_label) ? (
-            <>
-              {block.title ? <Text style={styles.title}>{block.title}</Text> : null}
-              {block.text_body ? (
-                <Text style={styles.body}>{block.text_body}</Text>
-              ) : null}
-            </>
+        const titleContent =
+          block.show_component_title !== false && block.title ? (
+            <Text style={styles.title}>{block.title}</Text>
           ) : null;
+        const bodyContent = !isImageFocused
+          ? renderBodySegments(block.text_body, `home-block-${block.id}`)
+          : null;
+        const content = bodyContent ? (
+          <>
+            {bodyContent}
+          </>
+        ) : null;
 
         const fallbackHeight = block.layout === "banner" || isOnlyImage ? 220 : 160;
 
@@ -162,31 +204,34 @@ function HomeContentListComponent({ blocks, renderComponent }: HomeContentListPr
         return (
           <View
             key={`${block.id}-${block.display_order}`}
-            style={[styles.blockContainer, containerBackground, !isLast && styles.blockSpacing]}
+            style={!isLast && styles.blockSpacing}
           >
-            {isOnlyImage || isImageFocused ? (
-              <>
-                {imageElement ? <View style={styles.imageContainer}>{imageElement}</View> : null}
-                {ctaButton ? <View style={styles.ctaImageWrapper}>{ctaButton}</View> : null}
-              </>
-            ) : isSplitLayout ? (
-              <View style={styles.splitContainer}>
-                <View style={styles.splitText}>{content}{ctaButton}</View>
-                <View style={styles.splitImageWrapper}>{imageElement}</View>
-              </View>
-            ) : (
-              <>
-                {showImage ? (
-                  <View style={[styles.imageContainer, block.layout !== "banner" && styles.blockImageWrapper]}>
-                    {imageElement}
-                  </View>
-                ) : null}
-                <View style={styles.contentContainer}>
-                  {content}
-                  {ctaButton}
+            {titleContent ? <View style={styles.blockTitleContainer}>{titleContent}</View> : null}
+            <View style={[styles.blockContainer, containerBackground]}>
+              {isOnlyImage || isImageFocused ? (
+                <>
+                  {imageElement ? <View style={styles.imageContainer}>{imageElement}</View> : null}
+                  {ctaButton ? <View style={styles.ctaImageWrapper}>{ctaButton}</View> : null}
+                </>
+              ) : isSplitLayout ? (
+                <View style={styles.splitContainer}>
+                  <View style={styles.splitText}>{content}{ctaButton}</View>
+                  <View style={styles.splitImageWrapper}>{imageElement}</View>
                 </View>
-              </>
-            )}
+              ) : (
+                <>
+                  {showImage ? (
+                    <View style={[styles.imageContainer, block.layout !== "banner" && styles.blockImageWrapper]}>
+                      {imageElement}
+                    </View>
+                  ) : null}
+                  <View style={styles.contentContainer}>
+                    {content}
+                    {ctaButton}
+                  </View>
+                </>
+              )}
+            </View>
           </View>
         );
       })}
@@ -209,6 +254,17 @@ const createStyles = (theme: AppTheme) =>
     componentContainer: {
       width: "100%",
       padding: theme.spacing.lg,
+    },
+    componentTitle: {      
+      color: theme.colors.text,
+      fontSize: 22,
+      fontWeight: "700",
+      lineHeight: 32,
+    },
+    blockTitleContainer: {
+      paddingHorizontal: theme.spacing.sm,
+      paddingBottom: theme.spacing.sm,
+      marginTop: theme.spacing.lg,
     },
     imageContainer: {
       width: "100%",
@@ -240,7 +296,7 @@ const createStyles = (theme: AppTheme) =>
       overflow: "hidden",
     },
     title: {
-      fontSize: 20,
+      fontSize: 22,
       fontWeight: "700",
       color: theme.colors.text,
     },

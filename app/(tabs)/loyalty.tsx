@@ -25,6 +25,7 @@ import { useAuth } from "@/context/AuthContext";
 import { resolveAssetUrl } from "@/utils/url";
 import QuantitySelector from "@/components/QuantitySelector";
 import { getApiErrorMessage } from "@/utils/errorMessage";
+import { getCouponStateCopy, hasUsableCouponCode, isProcessingCoupon } from "@/utils/coupons";
 
 export default function LoyaltyScreen() {
   const router = useRouter();
@@ -84,8 +85,8 @@ export default function LoyaltyScreen() {
         setError(null);
         setRedeemSuccessMessage(
           safeQuantity > 1
-            ? `Recompensa resgatada com sucesso (${safeQuantity} unidades). Veja o cupom na aba Cupons.`
-            : "Recompensa resgatada com sucesso. Veja o cupom na aba Cupons."
+            ? `Recompensa enviada para processamento (${safeQuantity} unidades). O código aparecerá na aba Cupons assim que ficar pronto.`
+            : "Recompensa em processamento. O código aparecerá na aba Cupons assim que ficar pronto."
         );
     } catch (err: any) {
       console.error("Erro ao resgatar recompensa", err);
@@ -107,15 +108,16 @@ export default function LoyaltyScreen() {
     ({ item }: { item: LoyaltyReward }) => {
       const points = data?.points ?? 0;
       const redeemedCoupon = item.user_coupon;
-      const couponStatus = redeemedCoupon?.status?.toLowerCase() ?? null;
-      const isConsumed = couponStatus === "done";
-      const displayedCode = !isConsumed
-        ? redeemedCoupon?.external_code ?? redeemedCoupon?.coupon?.code ?? null
+      const stateCopy = getCouponStateCopy(redeemedCoupon ?? null);
+      const displayedCode = hasUsableCouponCode(redeemedCoupon ?? null)
+        ? redeemedCoupon?.external_code ?? null
         : null;
       const isRedeemed = Boolean(displayedCode);
+      const isPendingSync = isProcessingCoupon(redeemedCoupon ?? null);
+      const hasBlockedCoupon = Boolean(redeemedCoupon && !isRedeemed && !isPendingSync);
       const threshold = item.threshold > 0 ? item.threshold : null;
       const availableUnits = threshold ? Math.floor(points / threshold) : 0;
-      const canClaim = availableUnits >= 1 && !isRedeemed;
+      const canClaim = availableUnits >= 1 && !isRedeemed && !isPendingSync && !hasBlockedCoupon;
       const assetUri = resolveAssetUrl(item.image, config?.assets_base_url);
       const shouldBlur = !isRedeemed && !canClaim;
       const showLock = !isRedeemed && !canClaim;
@@ -124,15 +126,23 @@ export default function LoyaltyScreen() {
         threshold && points < threshold ? Math.max(0, threshold - points) : 0;
       const buttonLabel = isRedeemed
         ? "Resgatado"
+        : isPendingSync
+          ? "Processando"
         : canClaim
           ? availableUnits > 1
             ? `Resgatar (${availableUnits})`
             : "Resgatar prêmio"
+          : hasBlockedCoupon
+            ? "Indisponível"
           : threshold
             ? `Faltam ${missingPoints}`
             : "Indisponível";
       const statusHint = isRedeemed
         ? "Cupom já resgatado e disponível abaixo."
+        : isPendingSync
+          ? stateCopy?.hint ?? "Seu benefício está sendo sincronizado com o ERP."
+        : hasBlockedCoupon
+          ? stateCopy?.hint ?? "Este benefício não possui código disponível no momento."
         : canClaim
           ? availableUnits > 1
             ? `Você pode resgatar até ${availableUnits} unidades.`
@@ -176,6 +186,11 @@ export default function LoyaltyScreen() {
               <View style={styles.redeemedContainer}>
                 <Text style={styles.redeemedLabel}>Cupom resgatado</Text>
                 <Text style={styles.redeemedCode}>{displayedCode}</Text>
+              </View>
+            ) : stateCopy && (isPendingSync || hasBlockedCoupon) ? (
+              <View style={styles.redeemedContainer}>
+                <Text style={styles.redeemedLabel}>{stateCopy.title}</Text>
+                <Text style={styles.rewardStatusHint}>{stateCopy.hint}</Text>
               </View>
             ) : (
               <TouchableOpacity
@@ -517,7 +532,7 @@ const createStyles = (theme: AppTheme, gridTheme: LoyaltyGridTheme) =>
     },
     modalOverlay: {
       flex: 1,
-      backgroundColor: "rgba(0,0,0,0.5)",
+      backgroundColor: theme.colors.scrim,
       alignItems: "center",
       justifyContent: "center",
       padding: theme.spacing.lg,

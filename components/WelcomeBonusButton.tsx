@@ -17,7 +17,10 @@ type WelcomeBonusButtonProps = {
   loading?: boolean;
 };
 
-export default function WelcomeBonusButton({ onActivate, loading = false }: WelcomeBonusButtonProps) {
+export default function WelcomeBonusButton({
+  onActivate,
+  loading = false,
+}: WelcomeBonusButtonProps) {
   const { user } = useAuth();
   const [pulseAnim] = useState(new Animated.Value(1));
   const { theme } = useThemeMode();
@@ -98,13 +101,10 @@ const createStyles = (theme: AppTheme) =>
       fontSize: 15,
       textAlign: "center",
     },
-    greetingText: {
-      marginTop: theme.spacing.lg,
+    greetingText: {      
       color: theme.colors.text,
       fontWeight: "600",
-      textAlign: "left",
-      
-      marginLeft: theme.spacing.md,
+      textAlign: "left",            
       fontSize: 22,
     },
   });

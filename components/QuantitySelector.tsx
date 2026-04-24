@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import {
   View,
   TextInput,
@@ -8,6 +8,7 @@ import {
   ViewStyle,
 } from "react-native";
 import { AppTheme } from "@/constants/theme";
+import { getInteractiveFieldStyles } from "@/components/ui/InteractiveField";
 
 type QuantitySelectorProps = {
   value: number;
@@ -31,6 +32,9 @@ function QuantitySelectorComponent({
   style,
 }: QuantitySelectorProps) {
   const safeValue = Math.max(min, Math.min(max, Number.isFinite(value) ? value : min));
+  const componentStyles = styles(theme);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [pressedControl, setPressedControl] = useState<"decrease" | "increase" | null>(null);
 
   const handleBump = (delta: number) => {
     if (disabled) return;
@@ -39,13 +43,19 @@ function QuantitySelectorComponent({
   };
 
   return (
-    <View style={[styles(theme).container, style]}>
+    <View style={[componentStyles.container, style]}>
       <TouchableOpacity
-        style={[styles(theme).button, disabled && styles(theme).buttonDisabled]}
+        style={[
+          componentStyles.button,
+          pressedControl === "decrease" && componentStyles.buttonActive,
+          (disabled || safeValue <= min) && componentStyles.buttonDisabled,
+        ]}
         disabled={disabled || safeValue <= min}
+        onPressIn={() => setPressedControl("decrease")}
+        onPressOut={() => setPressedControl(null)}
         onPress={() => handleBump(-step)}
       >
-        <Text style={styles(theme).buttonLabel}>-</Text>
+        <Text style={componentStyles.buttonLabel}>-</Text>
       </TouchableOpacity>
       <TextInput
         keyboardType="number-pad"
@@ -58,14 +68,27 @@ function QuantitySelectorComponent({
           }
         }}
         editable={!disabled}
-        style={styles(theme).input}
+        style={[
+          componentStyles.input,
+          isInputFocused && componentStyles.inputFocused,
+          disabled && componentStyles.inputDisabled,
+        ]}
+        onFocus={() => setIsInputFocused(true)}
+        onBlur={() => setIsInputFocused(false)}
+        placeholderTextColor={theme.colors.inputPlaceholder}
       />
       <TouchableOpacity
-        style={[styles(theme).button, disabled && styles(theme).buttonDisabled]}
+        style={[
+          componentStyles.button,
+          pressedControl === "increase" && componentStyles.buttonActive,
+          (disabled || safeValue >= max) && componentStyles.buttonDisabled,
+        ]}
         disabled={disabled || safeValue >= max}
+        onPressIn={() => setPressedControl("increase")}
+        onPressOut={() => setPressedControl(null)}
         onPress={() => handleBump(step)}
       >
-        <Text style={styles(theme).buttonLabel}>+</Text>
+        <Text style={componentStyles.buttonLabel}>+</Text>
       </TouchableOpacity>
     </View>
   );
@@ -84,12 +107,13 @@ const styles = (theme: AppTheme) =>
       borderRadius: theme.radius.sm,
       alignItems: "center",
       justifyContent: "center",
-      borderWidth: 1,
-      borderColor: theme.general.borderColor,
-      backgroundColor: theme.general.surface,
+      ...getInteractiveFieldStyles(theme, { variant: "inputLike", state: "default" }),
+    },
+    buttonActive: {
+      ...getInteractiveFieldStyles(theme, { variant: "inputLike", state: "active" }),
     },
     buttonDisabled: {
-      opacity: 0.5,
+      ...getInteractiveFieldStyles(theme, { variant: "inputLike", state: "disabled" }),
     },
     buttonLabel: {
       fontSize: 20,
@@ -101,12 +125,16 @@ const styles = (theme: AppTheme) =>
       textAlign: "center",
       paddingVertical: 4,
       paddingHorizontal: 8,
-      borderWidth: 1,
       borderRadius: theme.radius.sm,
-      borderColor: theme.general.borderColor,
-      backgroundColor: theme.colors.cardBackground,
-      color: theme.colors.text,
+      ...getInteractiveFieldStyles(theme, { variant: "input", state: "default" }),
+      color: theme.colors.inputText,
       fontWeight: "600",
+    },
+    inputFocused: {
+      ...getInteractiveFieldStyles(theme, { variant: "input", state: "focus" }),
+    },
+    inputDisabled: {
+      ...getInteractiveFieldStyles(theme, { variant: "input", state: "disabled" }),
     },
   });
 

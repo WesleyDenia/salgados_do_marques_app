@@ -6,6 +6,22 @@ import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity } from
 import { getApiErrorMessage } from "@/utils/errorMessage";
 import { useThemeMode } from "@/context/ThemeContext";
 import AuthScreenLayout from "@/components/auth/AuthScreenLayout";
+import { getInteractiveFieldStyles } from "@/components/ui/InteractiveField";
+
+const loginPalette = {
+  background: "#910202",
+  title: "#FFF7F7",
+  subtitle: "#F3D6D6",
+  link: "#FFE2E2",
+  buttonBackground: "#FFF7F7",
+  buttonText: "#910202",
+  inputSurface: "#FFFDFC",
+  inputText: "#2F1717",
+  inputPlaceholder: "#8A6666",
+  errorSurface: "rgba(255, 245, 245, 0.14)",
+  errorBorder: "rgba(255, 231, 231, 0.45)",
+  errorText: "#FFF1F1",
+} as const;
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -16,6 +32,8 @@ export default function LoginScreen() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [isEmailFocused, setIsEmailFocused] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const { theme } = useThemeMode();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const passwordInputRef = useRef<TextInput>(null);
@@ -65,13 +83,16 @@ export default function LoginScreen() {
       subtitle="Acesse sua conta para acompanhar encomendas, cupons e Coinxinhas."
       showLogo
       centerContent
+      screenBackgroundColor={loginPalette.background}
+      titleColor={loginPalette.title}
+      subtitleColor={loginPalette.subtitle}
       innerContainerStyle={styles.container}
       logoStyle={styles.logo}
     >
               <TextInput
-                style={[styles.input, emailError && styles.inputError]}
+                style={[styles.input, isEmailFocused && styles.inputFocused, emailError && styles.inputError]}
                 placeholder="Email"
-                placeholderTextColor={theme.colors.textSecondary}
+                placeholderTextColor={loginPalette.inputPlaceholder}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 value={email}
@@ -86,14 +107,20 @@ export default function LoginScreen() {
                 onSubmitEditing={() => passwordInputRef.current?.focus()}
                 accessibilityLabel="Email"
                 accessibilityHint="Digite o email da sua conta"
+                onFocus={() => setIsEmailFocused(true)}
+                onBlur={() => setIsEmailFocused(false)}
               />
               {emailError ? <Text style={styles.inlineError}>{emailError}</Text> : null}
 
               <TextInput
                 ref={passwordInputRef}
-                style={[styles.input, passwordError && styles.inputError]}
+                style={[
+                  styles.input,
+                  isPasswordFocused && styles.inputFocused,
+                  passwordError && styles.inputError,
+                ]}
                 placeholder="Senha"
-                placeholderTextColor={theme.colors.textSecondary}
+                placeholderTextColor={loginPalette.inputPlaceholder}
                 autoCapitalize="none"
                 autoCorrect={false}
                 secureTextEntry
@@ -110,6 +137,8 @@ export default function LoginScreen() {
                 }}
                 accessibilityLabel="Senha"
                 accessibilityHint="Digite a senha para entrar na sua conta"
+                onFocus={() => setIsPasswordFocused(true)}
+                onBlur={() => setIsPasswordFocused(false)}
               />
               {passwordError ? <Text style={styles.inlineError}>{passwordError}</Text> : null}
 
@@ -125,7 +154,7 @@ export default function LoginScreen() {
                 accessibilityState={{ disabled: loading, busy: loading }}
               >
                 {loading ? (
-                  <ActivityIndicator color={theme.colors.textLight} />
+                  <ActivityIndicator color={loginPalette.buttonText} />
                 ) : (
                   <Text style={[Typography.button, styles.buttonText]}>Entrar</Text>
                 )}
@@ -160,28 +189,35 @@ const createStyles = (theme: AppTheme) =>
       height: 168,
     },
     input: {
-      backgroundColor: theme.colors.cardBackground,
-      borderWidth: 1,
-      borderColor: theme.general.borderColor,
+      ...getInteractiveFieldStyles(theme, { variant: "input", state: "default" }),
       borderRadius: 8,
       padding: 12,
       marginBottom: 16,
-      color: theme.colors.text,
+      color: loginPalette.inputText,
+      backgroundColor: loginPalette.inputSurface,
+      borderColor: "rgba(255,255,255,0.16)",
+    },
+    inputFocused: {
+      ...getInteractiveFieldStyles(theme, { variant: "input", state: "focus" }),
+      backgroundColor: loginPalette.inputSurface,
+      borderColor: "#FFD4D4",
     },
     inputError: {
-      borderColor: theme.colors.errorText,
+      ...getInteractiveFieldStyles(theme, { variant: "input", state: "error" }),
+      backgroundColor: loginPalette.inputSurface,
+      borderColor: "#FFC7C7",
     },
     inlineError: {
-      color: theme.colors.errorText,
+      color: loginPalette.errorText,
       marginTop: -10,
       marginBottom: 12,
       fontSize: 12,
     },
     formError: {
-      color: theme.colors.errorText,
-      backgroundColor: theme.general.surfaceElevated,
+      color: loginPalette.errorText,
+      backgroundColor: loginPalette.errorSurface,
       borderWidth: 1,
-      borderColor: theme.general.errorBorder,
+      borderColor: loginPalette.errorBorder,
       borderRadius: 8,
       paddingHorizontal: 12,
       paddingVertical: 10,
@@ -190,12 +226,12 @@ const createStyles = (theme: AppTheme) =>
       fontSize: 13,
     },
     button: {
-      backgroundColor: theme.colors.primary,
+      backgroundColor: loginPalette.buttonBackground,
       borderRadius: 8,
       padding: 16,
       alignItems: "center",
       marginBottom: 16,
     },
-    buttonText: { color: theme.colors.textLight },
-    link: { color: theme.colors.link, textAlign: "center", marginTop: 8 },
+    buttonText: { color: loginPalette.buttonText },
+    link: { color: loginPalette.link, textAlign: "center", marginTop: 8 },
   });

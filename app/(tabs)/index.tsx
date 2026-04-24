@@ -19,8 +19,11 @@ import { getApiErrorMessage } from "@/utils/errorMessage";
 import { useThemeMode } from "@/context/ThemeContext";
 import { useHomeContent } from "@/hooks/useHomeContent";
 import HomeContentList from "@/components/HomeContentList";
-import CouponsCarousel from "@/components/CouponsCarousel";
-import WelcomeBonusButton from "@/components/WelcomeBonusButton";
+import {
+  hasHomeComponent,
+  HOME_COMPONENT_KEYS,
+  renderHomeComponentByName,
+} from "@/components/homeComponentRegistry";
 import { ContentHomeBlock } from "@/types/contentHome";
 
 export default function HomeScreen() {
@@ -79,45 +82,17 @@ export default function HomeScreen() {
   }, [claimWelcomeBonus, triggerConfetti]);
 
   const hasWelcomeComponent = useMemo(
-    () =>
-      homeContent.some(
-    (block) => block.type === "component" && block.component_name === "WelcomeBonusButton",
-  ),
+    () => hasHomeComponent(homeContent, HOME_COMPONENT_KEYS.welcomeBonusButton),
     [homeContent],
   );
 
   const renderDynamicComponent = useCallback(
-    (block: ContentHomeBlock) => {
-      if (!block.component_name) return null;
-
-      const rawProps =
-        block.component_props && typeof block.component_props === "object" && !Array.isArray(block.component_props)
-          ? (block.component_props as Record<string, unknown>)
-          : {};
-      const componentProps = rawProps as Record<string, any>;
-
-      switch (block.component_name) {
-        case "WelcomeBonusButton":
-          return (
-            <WelcomeBonusButton
-              {...componentProps}
-              onActivate={handleWelcomeBonus}
-              loading={activatingBonus}
-            />
-          );
-
-        case "CouponsCarousel":
-          return (
-            <CouponsCarousel
-              {...componentProps}
-              refreshKey={couponRefreshKey}
-            />
-          );
-
-        default:
-          return null;
-      }
-    },
+    (block: ContentHomeBlock) =>
+      renderHomeComponentByName(block, {
+        activatingBonus,
+        couponRefreshKey,
+        onActivateWelcomeBonus: handleWelcomeBonus,
+      }),
     [activatingBonus, couponRefreshKey, handleWelcomeBonus],
   );
 
@@ -161,10 +136,28 @@ export default function HomeScreen() {
 
         {!hasWelcomeComponent ? (
           <View style={styles.componentWrapper}>
-            <WelcomeBonusButton
-              onActivate={handleWelcomeBonus}
-              loading={activatingBonus}
-            />
+            {renderHomeComponentByName({
+              id: -1,
+              title: null,
+              show_component_title: false,
+              text_body: null,
+              image_url: null,
+              type: "component",
+              layout: "default",
+              component_name: HOME_COMPONENT_KEYS.welcomeBonusButton,
+              component_props: null,
+              cta_label: null,
+              cta_url: null,
+              cta_image_only: false,
+              background_color: null,
+              display_order: -1,
+              is_active: true,
+              publish_at: null,
+            }, {
+              activatingBonus,
+              couponRefreshKey,
+              onActivateWelcomeBonus: handleWelcomeBonus,
+            })}
           </View>
         ) : null}
 

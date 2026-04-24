@@ -1,14 +1,14 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
+  Animated,
   View,
   Text,
   StyleSheet,
-  FlatList,
   ActivityIndicator,
   RefreshControl,
   useWindowDimensions,
 } from "react-native";
-import { Typography, AppTheme } from "@/constants/theme";
+import { AppTheme } from "@/constants/theme";
 import { getCouponsCarouselTheme, CouponsCarouselTheme } from "@/constants/themeCoupons";
 import { useCoupons } from "@/context/CouponsContext";
 import CouponCard from "@/components/CouponCard";
@@ -21,16 +21,29 @@ interface CouponsCarouselProps {
 export default function CouponsCarousel({ refreshKey }: CouponsCarouselProps) {
   const { theme } = useThemeMode();
   const carouselTheme = useMemo(() => getCouponsCarouselTheme(theme), [theme]);
-  const styles = useMemo(() => createStyles(theme, carouselTheme), [theme, carouselTheme]);
   const { width } = useWindowDimensions();
+  const homeContentInset = theme.spacing.sm + theme.spacing.lg;
+  const previewWidth = useMemo(() => Math.max(width * 0.1, theme.spacing.xl), [theme.spacing.xl, width]);
   const carouselSpacing = carouselTheme.spacing;
+  const scrollX = useRef(new Animated.Value(0)).current;
   const cardWidth = useMemo(
-    () => Math.min(width * carouselTheme.widthMultiplier, carouselTheme.maxWidth),
-    [width, carouselTheme.widthMultiplier, carouselTheme.maxWidth]
+    () =>
+      Math.min(
+        width - homeContentInset - previewWidth - carouselSpacing,
+        Math.min(width * carouselTheme.widthMultiplier, carouselTheme.maxWidth)
+      ),
+    [
+      width,
+      homeContentInset,
+      previewWidth,
+      carouselSpacing,
+      carouselTheme.widthMultiplier,
+      carouselTheme.maxWidth,
+    ]
   );
-  const horizontalPadding = useMemo(
-    () => Math.max((width - cardWidth) / 2, 0),
-    [width, cardWidth]
+  const styles = useMemo(
+    () => createStyles(theme, carouselTheme, homeContentInset, width),
+    [theme, carouselTheme, homeContentInset, width]
   );
 
   const {
@@ -43,6 +56,11 @@ export default function CouponsCarousel({ refreshKey }: CouponsCarouselProps) {
     activateCoupon,
     isActiveForMe,
   } = useCoupons();
+  const itemWidth = cardWidth + carouselSpacing;
+  const snapOffsets = useMemo(
+    () => availableCoupons.map((_, index) => index * itemWidth),
+    [availableCoupons, itemWidth]
+  );
 
   useEffect(() => {
     if (!refreshKey) return;
@@ -67,24 +85,32 @@ export default function CouponsCarousel({ refreshKey }: CouponsCarouselProps) {
 
   return (
     <View style={styles.carouselContainer}>
-      <Text style={[Typography.subtitle, styles.sectionTitle]}>
-        Cupons especiais para você
-      </Text>
-
-      <FlatList
+      <Animated.FlatList
         data={availableCoupons}
         keyExtractor={(item) => item.id.toString()}
         horizontal
         showsHorizontalScrollIndicator={false}
-        pagingEnabled
         decelerationRate="fast"
-        snapToInterval={cardWidth + carouselSpacing}
-        snapToAlignment="center"
+        snapToOffsets={snapOffsets}
+        snapToAlignment="start"
+        disableIntervalMomentum
+        bounces={false}
         contentContainerStyle={{
-          paddingHorizontal: horizontalPadding,
+          paddingLeft: homeContentInset,
+          paddingRight: homeContentInset + previewWidth,
           paddingBottom: theme.spacing.md,
         }}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+          { useNativeDriver: true }
+        )}
+        scrollEventThrottle={16}
         ItemSeparatorComponent={() => <View style={{ width: carouselSpacing }} />}
+        getItemLayout={(_, index) => ({
+          length: itemWidth,
+          offset: itemWidth * index,
+          index,
+        })}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -95,12 +121,41 @@ export default function CouponsCarousel({ refreshKey }: CouponsCarouselProps) {
             tintColor={theme.colors.primary}
           />
         }
-        renderItem={({ item }) => {
+        renderItem={({ item, index }) => {
           const active = isActiveForMe(item.id);
           const userCoupon = myCouponsMap[item.id];
+          const inputRange = [
+            (index - 1) * itemWidth,
+            index * itemWidth,
+            (index + 1) * itemWidth,
+          ];
+          const scale = scrollX.interpolate({
+            inputRange,
+            outputRange: [0.94, 1, 0.94],
+            extrapolate: "clamp",
+          });
+          const translateY = scrollX.interpolate({
+            inputRange,
+            outputRange: [8, 0, 8],
+            extrapolate: "clamp",
+          });
+          const opacity = scrollX.interpolate({
+            inputRange,
+            outputRange: [0.9, 1, 0.9],
+            extrapolate: "clamp",
+          });
 
           return (
-            <View style={[styles.cardWrapper, { width: cardWidth }]}> 
+            <Animated.View
+              style={[
+                styles.cardWrapper,
+                {
+                  width: cardWidth,
+                  opacity,
+                  transform: [{ scale }, { translateY }],
+                },
+              ]}
+            >
               <CouponCard
                 coupon={item}
                 theme={theme}
@@ -113,7 +168,7 @@ export default function CouponsCarousel({ refreshKey }: CouponsCarouselProps) {
                 style={styles.card}
                 imageRatio={carouselTheme.imageRatio}
               />
-            </View>
+            </Animated.View>
           );
         }}
       />
@@ -121,18 +176,17 @@ export default function CouponsCarousel({ refreshKey }: CouponsCarouselProps) {
   );
 }
 
-const createStyles = (theme: AppTheme, carouselTheme: CouponsCarouselTheme) =>
+const createStyles = (
+  theme: AppTheme,
+  carouselTheme: CouponsCarouselTheme,
+  homeContentInset: number,
+  viewportWidth: number
+) =>
   StyleSheet.create({
     carouselContainer: {
       marginTop: carouselTheme.sectionMarginTop,
-      width: "100%",
-    },
-    sectionTitle: {
-      marginBottom: theme.spacing.md,
-      textAlign: "left",
-      paddingHorizontal: carouselTheme.titlePaddingHorizontal,
-      color: theme.colors.textSecondary,
-      fontSize: 18,
+      width: viewportWidth,
+      marginHorizontal: -homeContentInset,
     },
     loadingContainer: {
       marginVertical: theme.spacing.huge,
@@ -150,6 +204,7 @@ const createStyles = (theme: AppTheme, carouselTheme: CouponsCarouselTheme) =>
     },
     cardWrapper: {
       width: "100%",
+      paddingVertical: theme.spacing.xs,
     },
     card: {
       width: "100%",

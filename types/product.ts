@@ -1,3 +1,5 @@
+import { Flavor } from "@/types/flavor";
+
 export interface Product {
   id: number;
   name: string;
@@ -12,6 +14,7 @@ export interface Product {
     name: string | null;
     order?: number | null;
   } | null;
+  allowed_flavors?: Flavor[];
   variants?: ProductVariant[];
   active?: boolean;
 }

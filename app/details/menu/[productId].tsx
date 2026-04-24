@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -20,7 +19,7 @@ import AppHeader from "@/components/AppHeader";
 import QuantitySelector from "@/components/QuantitySelector";
 import { useCart } from "@/context/CartContext";
 import api from "@/api/api";
-import { Flavor, Product, ProductVariant } from "@/types";
+import { Product, ProductVariant } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import { resolveAssetUrl } from "@/utils/url";
 
@@ -36,7 +35,6 @@ export default function ProductDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
-  const [flavors, setFlavors] = useState<Flavor[]>([]);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [flavorCounts, setFlavorCounts] = useState<Record<number, number>>({});
 
@@ -88,18 +86,9 @@ export default function ProductDetailScreen() {
       setLoadError(null);
       setNotFound(false);
       setLoading(true);
-      const [productResponse, flavorsResponse] = await Promise.all([
-        api.get<{ data: Product }>(`/products/${params.productId}`),
-        api.get<{ data: Flavor[] }>("/flavors"),
-      ]);
+      const productResponse = await api.get<{ data: Product }>(`/products/${params.productId}`);
       const loadedProduct = productResponse.data.data ?? productResponse.data;
-      const loadedFlavors = Array.isArray(flavorsResponse.data?.data)
-        ? flavorsResponse.data.data
-        : Array.isArray(flavorsResponse.data)
-          ? flavorsResponse.data
-          : [];
       setProduct(loadedProduct);
-      setFlavors(loadedFlavors);
 
       const variants = Array.isArray(loadedProduct?.variants)
         ? [...loadedProduct.variants].filter((variant) => variant.active)
@@ -152,6 +141,10 @@ export default function ProductDetailScreen() {
   const totalFlavorCount = useMemo(
     () => Object.values(flavorCounts).reduce((sum, value) => sum + value, 0),
     [flavorCounts]
+  );
+  const allowedFlavors = useMemo(
+    () => (Array.isArray(product?.allowed_flavors) ? product.allowed_flavors : []),
+    [product?.allowed_flavors]
   );
   const flavorSelectionStatus = useMemo(() => {
     if (!selectedVariant || maxFlavors <= 0) {
@@ -208,7 +201,7 @@ export default function ProductDetailScreen() {
       }
     }
 
-    const selectedFlavors = flavors
+    const selectedFlavors = allowedFlavors
       .map((flavor) => ({
         id: flavor.id,
         name: flavor.name,
@@ -222,21 +215,13 @@ export default function ProductDetailScreen() {
       variant: selectedVariant,
       flavors: selectedFlavors,
     });
-    Alert.alert("Encomenda atualizada", "Deseja concluir a encomenda agora?", [
-      {
-        text: "Continuar",
-        style: "cancel",
-        onPress: () => {
-          router.replace("/(tabs)/menu");
-        },
+    router.replace({
+      pathname: "/(tabs)/item-added",
+      params: {
+        itemName: product.name,
+        quantity: String(quantity),
       },
-      {
-        text: "Concluir",
-        onPress: () => {
-          router.replace("/(tabs)/orders");
-        },
-      },
-    ]);
+    });
   };
 
   return (
@@ -377,7 +362,7 @@ export default function ProductDetailScreen() {
                   </Text>
                 ) : null}
                 <View style={styles.flavorList}>
-                  {flavors.map((flavor) => (
+                  {allowedFlavors.map((flavor) => (
                     <View key={flavor.id} style={styles.flavorRow}>
                       <Text style={[styles.flavorName, { color: theme.colors.text }]}>
                         {flavor.name}
@@ -392,6 +377,11 @@ export default function ProductDetailScreen() {
                     </View>
                   ))}
                 </View>
+                {allowedFlavors.length === 0 ? (
+                  <Text style={[styles.helperText, { color: theme.colors.warningText }]}>
+                    Este artigo ainda não tem sabores disponíveis.
+                  </Text>
+                ) : null}
               </View>
             ) : null}
 
@@ -469,7 +459,7 @@ export default function ProductDetailScreen() {
             <TouchableOpacity
               style={[
                 styles.addButton,
-                { backgroundColor: theme.colors.primary },
+                { backgroundColor: theme.colors.secondary },
                 !canAddToCart && {
                   backgroundColor: theme.colors.disabledBackground,
                 },
@@ -485,7 +475,12 @@ export default function ProductDetailScreen() {
               }
               accessibilityState={{ disabled: !canAddToCart }}
             >
-              <Text style={[styles.addButtonText, { color: theme.colors.textLight }]}>
+              <Text
+                style={[
+                  styles.addButtonText,
+                  { color: canAddToCart ? theme.colors.textOnBrand : theme.colors.textSecondary },
+                ]}
+              >
                 Adicionar à encomenda
               </Text>
             </TouchableOpacity>
@@ -615,7 +610,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   addButton: {
-    backgroundColor: "#111827",
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: "center",
@@ -623,7 +617,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   addButtonText: {
-    color: "#ffffff",
     fontWeight: "700",
     fontSize: 16,
   },

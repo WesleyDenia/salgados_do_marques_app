@@ -1,15 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert } from "react-native";
 import api from "@/api/api";
-import { Coupon } from "@/types";
-
-export type UserCoupon = {
-  id: number;
-  active: boolean;
-  external_code?: string;
-  coupon?: { id: number };
-  status: "pending" | "done";
-};
+import { Coupon, UserCoupon } from "@/types";
+import { getApiErrorMessage } from "@/utils/errorMessage";
+import { unwrapApiList, unwrapApiObject } from "@/utils/apiResponse";
+import { buildDisplayCoupons, buildMyCouponsMap } from "@/utils/coupons";
 
 type UseCouponsOptions = {
   enabled?: boolean;
@@ -17,6 +12,7 @@ type UseCouponsOptions = {
 
 export function useCouponsData({ enabled = true }: UseCouponsOptions = {}) {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [myCoupons, setMyCoupons] = useState<UserCoupon[]>([]);
   const [myCouponsMap, setMyCouponsMap] = useState<Record<number, UserCoupon>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -36,7 +32,7 @@ export function useCouponsData({ enabled = true }: UseCouponsOptions = {}) {
       if (!enabled || !mountedRef.current) return;
       const { data } = await api.get("/coupons", { signal });
       if (!mountedRef.current) return;
-      setCoupons(data.data ?? data);
+      setCoupons(unwrapApiList<Coupon>(data));
     },
     [enabled],
   );
@@ -47,17 +43,9 @@ export function useCouponsData({ enabled = true }: UseCouponsOptions = {}) {
       const { data } = await api.get("/my-coupons", { signal });
       if (!mountedRef.current) return;
 
-      const list: UserCoupon[] = data.data ?? data;
-      const map: Record<number, UserCoupon> = {};
-
-      list.forEach((uc) => {
-        const id = uc.coupon?.id;
-        if (id != null) {
-          map[id] = uc;
-        }
-      });
-
-      setMyCouponsMap(map);
+      const list = unwrapApiList<UserCoupon>(data);
+      setMyCoupons(list);
+      setMyCouponsMap(buildMyCouponsMap(list));
     },
     [enabled],
   );
@@ -108,6 +96,7 @@ export function useCouponsData({ enabled = true }: UseCouponsOptions = {}) {
       };
     } else {
       setCoupons([]);
+      setMyCoupons([]);
       setMyCouponsMap({});
       setLoading(false);
     }
@@ -121,10 +110,18 @@ export function useCouponsData({ enabled = true }: UseCouponsOptions = {}) {
         const { data } = await api.post("/my-coupons", { coupon_id: couponId });
         if (!mountedRef.current) return;
 
-        const userCoupon: UserCoupon = data.data ?? data;
+        const userCoupon = unwrapApiObject<UserCoupon>(data);
+        if (!userCoupon) {
+          throw new Error("Resposta inválida ao ativar o cupom.");
+        }
+
+        setMyCoupons((prev) => {
+          const next = prev.filter((candidate) => candidate.id !== userCoupon.id);
+          return [userCoupon, ...next];
+        });
         setMyCouponsMap((prev) => ({ ...prev, [couponId]: userCoupon }));
       } catch (error: any) {
-        const message = error?.response?.data?.message ?? "Não foi possível ativar o cupom.";
+        const message = getApiErrorMessage(error, "Não foi possível ativar o cupom.");
         Alert.alert("Erro", message);
         console.error(error?.response?.data ?? error);
       } finally {
@@ -137,11 +134,8 @@ export function useCouponsData({ enabled = true }: UseCouponsOptions = {}) {
   );
 
   const availableCoupons = useMemo(() => {
-    return coupons.filter((coupon) => {
-      const uc = myCouponsMap[coupon.id];
-      return !uc || uc.status?.toLowerCase() !== "done";
-    });
-  }, [coupons, myCouponsMap]);
+    return buildDisplayCoupons(coupons, myCoupons);
+  }, [coupons, myCoupons]);
 
   const isActiveForMe = useCallback(
     (couponId: number) => !!myCouponsMap[couponId]?.active,
@@ -151,6 +145,7 @@ export function useCouponsData({ enabled = true }: UseCouponsOptions = {}) {
   return {
     coupons,
     availableCoupons,
+    myCoupons,
     myCouponsMap,
     loading,
     refreshing,

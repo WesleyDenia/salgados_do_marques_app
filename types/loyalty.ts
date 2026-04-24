@@ -1,4 +1,4 @@
-import { Coupon } from "./coupon";
+import { Coupon, UserCouponStatus } from "./coupon";
 
 export interface LoyaltyStatus {
   points: number;
@@ -21,7 +21,9 @@ export interface LoyaltyReward {
 export interface LoyaltyRewardCoupon {
   id: number;
   external_code: string | null;
-  status: string | null;
+  status: UserCouponStatus | null;
+  erp_status?: string | null;
+  erp_error?: string | null;
   type: string | null;
   coupon?: Coupon | null;
 }

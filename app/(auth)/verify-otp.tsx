@@ -10,15 +10,21 @@ import { useVerifyOtp } from "@/hooks/useVerifyOtp";
 import { useThemeMode } from "@/context/ThemeContext";
 import { getApiErrorMessage } from "@/utils/errorMessage";
 import AuthScreenLayout from "@/components/auth/AuthScreenLayout";
+import { getInteractiveFieldColors } from "@/components/ui/InteractiveField";
 
-const Input = styledNative.TextInput`
+const Input = styledNative.TextInput<{ $focused?: boolean; $error?: boolean }>`
   border-width: 1px;
-  border-color: ${({ theme }) => theme.general.borderColor};
+  border-color: ${({ theme, $focused, $error }) => {
+    const colors = getInteractiveFieldColors(theme);
+    if ($error) return theme.colors.errorText;
+    if ($focused) return colors.inputBorderFocus;
+    return colors.inputBorder;
+  }};
   border-radius: ${({ theme }) => theme.radius.md}px;
   padding: ${({ theme }) => theme.spacing.lg}px;
   margin-bottom: ${({ theme }) => theme.spacing.lg}px;
-  color: ${({ theme }) => theme.colors.text};
-  background-color: ${({ theme }) => theme.colors.cardBackground};
+  color: ${({ theme }) => theme.colors.inputText};
+  background-color: ${({ theme }) => theme.colors.inputSurface};
 `;
 
 const OtpInput = styledNative(Input)`
@@ -99,6 +105,7 @@ export default function VerifyOtpScreen() {
   const [token, setToken] = useState("");
   const [password, setPassword] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const { verify, loading, error } = useVerifyOtp();
 
@@ -165,8 +172,10 @@ export default function VerifyOtpScreen() {
           </StepCallout>
 
           <Input
+            $focused={focusedField === "phone"}
+            $error={!!formError}
             placeholder="Número do WhatsApp (+351900123456)"
-            placeholderTextColor={theme.colors.placeholderText}
+            placeholderTextColor={theme.colors.inputPlaceholder}
             keyboardType="phone-pad"
             value={phone}
             onChangeText={(value) => {
@@ -175,11 +184,15 @@ export default function VerifyOtpScreen() {
             }}
             textContentType="telephoneNumber"
             autoCapitalize="none"
+            onFocus={() => setFocusedField("phone")}
+            onBlur={() => setFocusedField(null)}
           />
 
           <OtpInput
+            $focused={focusedField === "token"}
+            $error={!!formError}
             placeholder="000000"
-            placeholderTextColor={theme.colors.placeholderText}
+            placeholderTextColor={theme.colors.inputPlaceholder}
             keyboardType="number-pad"
             maxLength={6}
             value={token}
@@ -189,12 +202,16 @@ export default function VerifyOtpScreen() {
             }}
             textContentType="oneTimeCode"
             autoCapitalize="none"
+            onFocus={() => setFocusedField("token")}
+            onBlur={() => setFocusedField(null)}
           />
           <HelperText>Digite exatamente 6 dígitos do código enviado.</HelperText>
 
           <Input
+            $focused={focusedField === "password"}
+            $error={!!formError}
             placeholder="Nova senha"
-            placeholderTextColor={theme.colors.placeholderText}
+            placeholderTextColor={theme.colors.inputPlaceholder}
             secureTextEntry
             value={password}
             onChangeText={(value) => {
@@ -202,6 +219,8 @@ export default function VerifyOtpScreen() {
               if (formError) setFormError(null);
             }}
             textContentType="newPassword"
+            onFocus={() => setFocusedField("password")}
+            onBlur={() => setFocusedField(null)}
           />
 
           {formError ? <ErrorText>{formError}</ErrorText> : null}

@@ -18,6 +18,7 @@ import { useThemeMode } from "@/context/ThemeContext";
 import { AppTheme } from "@/constants/theme";
 import { User } from "@/types";
 import { getApiErrorMessage } from "@/utils/errorMessage";
+import { getInteractiveFieldStyles } from "@/components/ui/InteractiveField";
 
 export default function ProfileEditScreen() {
   const router = useRouter();
@@ -28,6 +29,12 @@ export default function ProfileEditScreen() {
   const [form, setForm] = useState<Partial<User>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  const getInputStyle = (field: string) => [
+    styles.input,
+    focusedField === field && styles.inputFocused,
+  ];
 
   useEffect(() => {
     if (authUser) {
@@ -82,54 +89,68 @@ export default function ProfileEditScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <TextInput
-          style={styles.input}
+          style={getInputStyle("name")}
           placeholder="Nome"
-          placeholderTextColor={theme.colors.textSecondary}
+          placeholderTextColor={theme.colors.inputPlaceholder}
           value={form.name || ""}
           onChangeText={(v) => handleChange("name", v)}
+          onFocus={() => setFocusedField("name")}
+          onBlur={() => setFocusedField(null)}
         />
         <TextInput
-          style={styles.input}
+          style={getInputStyle("phone")}
           placeholder="Telefone"
-          placeholderTextColor={theme.colors.textSecondary}
+          placeholderTextColor={theme.colors.inputPlaceholder}
           keyboardType="phone-pad"
           value={form.phone || ""}
           onChangeText={(v) => handleChange("phone", v)}
+          onFocus={() => setFocusedField("phone")}
+          onBlur={() => setFocusedField(null)}
         />
         <TextInput
-          style={styles.input}
+          style={getInputStyle("birth_date")}
           placeholder="Data de nascimento (YYYY-MM-DD)"
-          placeholderTextColor={theme.colors.textSecondary}
+          placeholderTextColor={theme.colors.inputPlaceholder}
           value={form.birth_date || ""}
           onChangeText={(v) => handleChange("birth_date", v)}
+          onFocus={() => setFocusedField("birth_date")}
+          onBlur={() => setFocusedField(null)}
         />
         <TextInput
-          style={styles.input}
+          style={getInputStyle("nif")}
           placeholder="NIF"
-          placeholderTextColor={theme.colors.textSecondary}
+          placeholderTextColor={theme.colors.inputPlaceholder}
           value={form.nif || ""}
           onChangeText={(v) => handleChange("nif", v)}
+          onFocus={() => setFocusedField("nif")}
+          onBlur={() => setFocusedField(null)}
         />
         <TextInput
-          style={styles.input}
+          style={getInputStyle("street")}
           placeholder="Rua"
-          placeholderTextColor={theme.colors.textSecondary}
+          placeholderTextColor={theme.colors.inputPlaceholder}
           value={form.street || ""}
           onChangeText={(v) => handleChange("street", v)}
+          onFocus={() => setFocusedField("street")}
+          onBlur={() => setFocusedField(null)}
         />
         <TextInput
-          style={styles.input}
+          style={getInputStyle("city")}
           placeholder="Cidade"
-          placeholderTextColor={theme.colors.textSecondary}
+          placeholderTextColor={theme.colors.inputPlaceholder}
           value={form.city || ""}
           onChangeText={(v) => handleChange("city", v)}
+          onFocus={() => setFocusedField("city")}
+          onBlur={() => setFocusedField(null)}
         />
         <TextInput
-          style={styles.input}
+          style={getInputStyle("postal_code")}
           placeholder="Código Postal"
-          placeholderTextColor={theme.colors.textSecondary}
+          placeholderTextColor={theme.colors.inputPlaceholder}
           value={form.postal_code || ""}
           onChangeText={(v) => handleChange("postal_code", v)}
+          onFocus={() => setFocusedField("postal_code")}
+          onBlur={() => setFocusedField(null)}
         />
 
         <TouchableOpacity
@@ -162,13 +183,14 @@ const createStyles = (theme: AppTheme) =>
       backgroundColor: theme.general.screenBackground,
     },
     input: {
-      backgroundColor: theme.general.surface,
-      borderColor: theme.general.borderColor,
-      borderWidth: 1,
+      ...getInteractiveFieldStyles(theme, { variant: "input", state: "default" }),
       borderRadius: theme.radius.md,
       padding: theme.spacing.md,
       marginBottom: theme.spacing.md,
-      color: theme.colors.text,
+      color: theme.colors.inputText,
+    },
+    inputFocused: {
+      ...getInteractiveFieldStyles(theme, { variant: "input", state: "focus" }),
     },
     button: {
       flexDirection: "row",

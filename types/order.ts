@@ -38,4 +38,26 @@ export type OrderSettings = {
   minimum_minutes: number;
   cancel_minutes: number;
   timezone: string;
+  scheduling_window_days: number;
+};
+
+export type OrderAvailabilityDates = {
+  store_id: number;
+  timezone: string;
+  dates: string[];
+};
+
+export type OrderAvailabilityHours = {
+  store_id: number;
+  date: string;
+  timezone: string;
+  hours: string[];
+};
+
+export type OrderAvailabilityMinutes = {
+  store_id: number;
+  date: string;
+  hour: string;
+  timezone: string;
+  minute_options: string[];
 };

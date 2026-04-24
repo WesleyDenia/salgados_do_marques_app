@@ -6,6 +6,7 @@ import { useThemeMode } from "@/context/ThemeContext";
 import { AppTheme } from "@/constants/theme";
 import { useCoupons } from "@/context/CouponsContext";
 import AppHeader from "@/components/AppHeader";
+import { getCouponStateCopy, hasUsableCouponCode } from "@/utils/coupons";
 
 export default function CouponDetailsScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -22,6 +23,9 @@ export default function CouponDetailsScreen() {
 
   const styles = useMemo(() => createStyles(theme), [theme]);
   const barStyle = mode === "dark" ? "light-content" : "dark-content";
+  const userCoupon = coupon?.user_coupon ?? null;
+  const stateCopy = getCouponStateCopy(userCoupon);
+  const canUseCode = hasUsableCouponCode(userCoupon);
 
   useEffect(() => {
     if (!copyFeedback) return;
@@ -30,7 +34,7 @@ export default function CouponDetailsScreen() {
   }, [copyFeedback]);
 
   async function handleCopyCode() {
-    if (!coupon?.code) return;
+    if (!coupon?.code || !canUseCode) return;
     await Clipboard.setStringAsync(coupon.code);
     setCopyFeedback("Código copiado para a área de transferência.");
   }
@@ -58,14 +62,32 @@ export default function CouponDetailsScreen() {
 
         <View style={styles.statusCallout}>
           <Text style={styles.statusCalloutTitle}>
-            {coupon.code ? "Cupom pronto para uso" : "Cupom sem código disponível"}
+            {stateCopy?.title ?? (canUseCode ? "Cupom pronto para uso" : "Cupom sem código disponível")}
           </Text>
           <Text style={styles.statusCalloutText}>
-            {coupon.code
-              ? "Copie o código abaixo e apresente na loja no momento do pagamento."
-              : "Ative o cupom na aba Cupons para gerar um código de desconto."}
+            {stateCopy?.hint ??
+              (canUseCode
+                ? "Copie o código abaixo e apresente na loja no momento do pagamento."
+                : "Ative o cupom na aba Cupons para gerar um código de desconto.")}
           </Text>
         </View>
+
+      {coupon.origin?.type === "partner" ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Origem</Text>
+          <Text style={styles.sectionText}>{coupon.origin.label}</Text>
+          {coupon.origin.partner ? (
+            <Text style={styles.sectionText}>
+              Parceiro: {coupon.origin.partner.name}
+            </Text>
+          ) : null}
+          {coupon.origin.partner_campaign ? (
+            <Text style={styles.sectionText}>
+              Campanha: {coupon.origin.partner_campaign.public_name}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Validade</Text>
@@ -77,9 +99,9 @@ export default function CouponDetailsScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Código</Text>
-        <Text style={styles.code}>{coupon.code}</Text>
-        {coupon.code ? (
+          <Text style={styles.sectionLabel}>Código</Text>
+          <Text style={styles.code}>{canUseCode ? coupon.code : "Ainda indisponível"}</Text>
+        {canUseCode ? (
           <TouchableOpacity style={styles.copyButton} onPress={handleCopyCode}>
             <Text style={styles.copyButtonText}>Copiar código</Text>
           </TouchableOpacity>
@@ -89,7 +111,9 @@ export default function CouponDetailsScreen() {
 
       {coupon.body ? (
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Como usar</Text>
+          <Text style={styles.sectionLabel}>
+            {coupon.origin?.type === "partner" ? "Como usar em loja" : "Como usar"}
+          </Text>
           <Text style={styles.sectionText}>{coupon.body}</Text>
         </View>
       ) : null}
@@ -118,7 +142,7 @@ const createStyles = (theme: AppTheme) =>
     statusCallout: {
       borderRadius: theme.radius.md,
       borderWidth: 1,
-      borderColor: theme.colors.primary,
+      borderColor: theme.colors.brandOnSurface,
       backgroundColor: theme.general.surface,
       padding: theme.spacing.md,
       gap: theme.spacing.xs,
@@ -151,7 +175,7 @@ const createStyles = (theme: AppTheme) =>
     code: {
       fontSize: 18,
       fontWeight: "700",
-      color: theme.colors.primary,
+      color: theme.colors.brandOnSurface,
       letterSpacing: 1,
     },
     copyButton: {
@@ -161,11 +185,11 @@ const createStyles = (theme: AppTheme) =>
       paddingHorizontal: theme.spacing.md,
       borderRadius: theme.radius.md,
       borderWidth: 1,
-      borderColor: theme.colors.primary,
+      borderColor: theme.colors.brandOnSurface,
       backgroundColor: theme.general.screenBackground,
     },
     copyButtonText: {
-      color: theme.colors.primary,
+      color: theme.colors.brandOnSurface,
       fontWeight: "600",
       textTransform: "uppercase",
       fontSize: 12,
@@ -201,10 +225,10 @@ const createStyles = (theme: AppTheme) =>
       paddingVertical: theme.spacing.sm,
       borderRadius: theme.radius.md,
       borderWidth: 1,
-      borderColor: theme.colors.primary,
+      borderColor: theme.colors.brandOnSurface,
     },
     backButtonText: {
-      color: theme.colors.primary,
+      color: theme.colors.brandOnSurface,
       fontWeight: "600",
     },
   });

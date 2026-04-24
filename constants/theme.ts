@@ -133,6 +133,23 @@ type ThemeColors = {
   activatedButton: string;
   backgroundButton: string;
   cardBackground: string;
+  brandOnSurface: string;
+  badgePrincipalSoft: string;
+  badgeRevendaSoft: string;
+  scrim: string;
+  headerGlass: string;
+  textOnBrand: string;
+  loyaltyLockOverlay: string;
+  loyaltyProgressFill: string;
+  loyaltyProgressTrack: string;
+  inputSurface: string;
+  inputBorder: string;
+  inputBorderFocus: string;
+  inputText: string;
+  inputPlaceholder: string;
+  inputLikeSurface: string;
+  inputLikeBorder: string;
+  inputLikeBorderActive: string;
 };
 
 type ThemeDefinition = {
@@ -183,6 +200,23 @@ const lightTheme: ThemeDefinition = {
     activatedButton: palette.light.activatedButton,
     backgroundButton: palette.light.backgroundButton,
     cardBackground: palette.light.cardBackground,
+    brandOnSurface: "#910202",
+    badgePrincipalSoft: "rgba(145,2,2,0.15)",
+    badgeRevendaSoft: "rgba(34,197,94,0.15)",
+    scrim: "rgba(0,0,0,0.5)",
+    headerGlass: "rgba(255,255,255,0.2)",
+    textOnBrand: palette.light.textLight,
+    loyaltyLockOverlay: "rgba(213, 213, 213, 0.85)",
+    loyaltyProgressFill: "#ffd700",
+    loyaltyProgressTrack: "rgba(255,255,255,0.3)",
+    inputSurface: "#ffffff",
+    inputBorder: "rgba(0,0,0,0.14)",
+    inputBorderFocus: "#910202",
+    inputText: palette.light.text,
+    inputPlaceholder: palette.light.placeholderText,
+    inputLikeSurface: "#f6f7fb",
+    inputLikeBorder: "rgba(0,0,0,0.12)",
+    inputLikeBorderActive: "#910202",
   },
   spacing,
   radius,
@@ -230,6 +264,23 @@ const darkTheme: ThemeDefinition = {
     activatedButton: palette.dark.accentSuccess,
     backgroundButton: palette.dark.backgroundButton,
     cardBackground: palette.dark.cardBackground,
+    brandOnSurface: "#ff9f9f",
+    badgePrincipalSoft: "rgba(255,159,159,0.16)",
+    badgeRevendaSoft: "rgba(94,227,138,0.18)",
+    scrim: "rgba(0,0,0,0.6)",
+    headerGlass: "rgba(255,255,255,0.18)",
+    textOnBrand: palette.dark.textLight,
+    loyaltyLockOverlay: "rgba(0,0,0,0.6)",
+    loyaltyProgressFill: "#ffd700",
+    loyaltyProgressTrack: "rgba(255,255,255,0.25)",
+    inputSurface: "#262d38",
+    inputBorder: "rgba(255,255,255,0.2)",
+    inputBorderFocus: "#ff9f9f",
+    inputText: palette.dark.text,
+    inputPlaceholder: palette.dark.placeholderText,
+    inputLikeSurface: "#2d3542",
+    inputLikeBorder: "rgba(255,255,255,0.22)",
+    inputLikeBorderActive: "#ff9f9f",
   },
   spacing,
   radius,

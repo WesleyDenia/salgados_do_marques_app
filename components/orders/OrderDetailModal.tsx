@@ -11,6 +11,7 @@ import { MapPin } from "lucide-react-native";
 import { Order } from "@/types";
 import { AppTheme } from "@/constants/theme";
 import { formatCurrency, formatDateTime } from "@/utils/format";
+import { getOrderStatusColors, getOrderStatusLabel } from "@/components/orders/orderStatus";
 
 type OrderDetailModalProps = {
   order: Order | null;
@@ -34,6 +35,8 @@ function OrderDetailModal({
   onStorePress,
 }: OrderDetailModalProps) {
   const styles = createStyles(theme);
+  const statusColors = order ? getOrderStatusColors(order.status, theme) : null;
+  const statusLabel = order ? getOrderStatusLabel(order.status) : null;
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -44,8 +47,22 @@ function OrderDetailModal({
               <Text style={styles.title}>Encomenda #{order.id}</Text>
               <View style={styles.header}>
                 <Text style={styles.meta}>Retirada: {formatDateTime(order.scheduled_at)}</Text>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{order.status.toUpperCase()}</Text>
+                <View
+                  style={[
+                    styles.badge,
+                    statusColors
+                      ? { backgroundColor: statusColors.background }
+                      : null,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.badgeText,
+                      statusColors ? { color: statusColors.text } : null,
+                    ]}
+                  >
+                    {statusLabel}
+                  </Text>
                 </View>
               </View>
               <View style={styles.metaGroup}>
@@ -129,15 +146,15 @@ const createStyles = (theme: AppTheme) =>
       gap: 12,
     },
     badge: {
-      backgroundColor: theme.colors.primary,
       borderRadius: 999,
       paddingHorizontal: 10,
       paddingVertical: 4,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: theme.colors.border,
     },
     badgeText: {
       fontSize: 12,
       fontWeight: "700",
-      color: theme.colors.textLight,
     },
     meta: {
       fontSize: 13,

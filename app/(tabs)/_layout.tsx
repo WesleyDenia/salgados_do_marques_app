@@ -7,7 +7,7 @@ import {
   Home,
   TicketPercent,
   UtensilsCrossed,
-  Star,
+  Handshake,
   MapPin,
   ShoppingBag,
 } from "lucide-react-native";
@@ -56,10 +56,31 @@ export default function TabLayout() {
         />
 
         <Tabs.Screen
+          name="cart"
+          options={{
+            href: null,
+          }}
+        />
+
+        <Tabs.Screen
           name="orders"
           options={{
             title: "Encomendas",
             tabBarIcon: ({ color }) => <ShoppingBag size={24} color={color} />,
+          }}
+        />
+
+        <Tabs.Screen
+          name="success"
+          options={{
+            href: null,
+          }}
+        />
+
+        <Tabs.Screen
+          name="item-added"
+          options={{
+            href: null,
           }}
         />
 
@@ -72,10 +93,17 @@ export default function TabLayout() {
         />
 
         <Tabs.Screen
+          name="partners"
+          options={{
+            title: "Parceiros",
+            tabBarIcon: ({ color }) => <Handshake size={24} color={color} />,
+          }}
+        />
+
+        <Tabs.Screen
           name="loyalty"
           options={{
-            title: "Fidelidade",
-            tabBarIcon: ({ color }) => <Star size={24} color={color} />,
+            href: null,
           }}
         />
 

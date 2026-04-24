@@ -1,6 +1,7 @@
 export type ContentHomeBlock = {
   id: number;
   title: string | null;
+  show_component_title?: boolean | null;
   text_body: string | null;
   image_url: string | null;
   type: string;

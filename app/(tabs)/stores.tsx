@@ -18,6 +18,7 @@ import { useThemeMode } from "@/context/ThemeContext";
 import { useStores } from "@/hooks/useStores";
 import { AppTheme } from "@/constants/theme";
 import { Store } from "@/types";
+import { getInteractiveFieldStyles } from "@/components/ui/InteractiveField";
 
 type Coordinates = { lat: number; lng: number };
 
@@ -31,6 +32,7 @@ export default function StoresScreen() {
   const [coords, setCoords] = useState<Coordinates | null>(null);
   const [requestingLocation, setRequestingLocation] = useState(false);
   const [locationDenied, setLocationDenied] = useState(false);
+  const [isFilterFocused, setIsFilterFocused] = useState(false);
 
   const normalizedFilters = useMemo(
     () => ({
@@ -150,12 +152,14 @@ export default function StoresScreen() {
 
         <View style={styles.filterRow}>
           <TextInput
-            style={styles.filterInput}
+            style={[styles.filterInput, isFilterFocused && styles.filterInputFocused]}
             placeholder="Filtrar por cidade"
-            placeholderTextColor={theme.colors.textSecondary}
+            placeholderTextColor={theme.colors.inputPlaceholder}
             value={cityFilter}
             onChangeText={setCityFilter}
             autoCapitalize="words"
+            onFocus={() => setIsFilterFocused(true)}
+            onBlur={() => setIsFilterFocused(false)}
           />
           <TouchableOpacity style={styles.filterButton} onPress={loadStores}>
             <Search size={20} color={theme.colors.textLight} />
@@ -249,14 +253,18 @@ const createStyles = (theme: AppTheme) =>
     },
     filterInput: {
       flex: 1,
-      borderWidth: 1,
-      borderColor: theme.general.borderColor,
+      ...getInteractiveFieldStyles(theme, { variant: "input", state: "default" }),
       borderRadius: theme.radius.sm,
       borderRightWidth: 0,
       paddingHorizontal: theme.spacing.lg,
       paddingVertical: theme.spacing.md,
-      color: theme.colors.text,
-      backgroundColor: theme.colors.cardBackground,
+      color: theme.colors.inputText,
+      borderTopRightRadius: 0,
+      borderBottomRightRadius: 0,
+    },
+    filterInputFocused: {
+      ...getInteractiveFieldStyles(theme, { variant: "input", state: "focus" }),
+      borderRightWidth: 0,
       borderTopRightRadius: 0,
       borderBottomRightRadius: 0,
     },
@@ -308,10 +316,10 @@ const createStyles = (theme: AppTheme) =>
       borderRadius: theme.radius.pill,
     },
     typePrincipal: {
-      backgroundColor: "rgba(145,2,2,0.15)",
+      backgroundColor: theme.colors.badgePrincipalSoft,
     },
     typeRevenda: {
-      backgroundColor: "rgba(34,197,94,0.15)",
+      backgroundColor: theme.colors.badgeRevendaSoft,
     },
     typeBadgeText: {
       fontSize: 12,

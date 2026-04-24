@@ -16,15 +16,14 @@ import { ChevronRight } from "lucide-react-native";
 import { useThemeMode } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
-import { getLoyaltyBannerTheme } from "@/constants/themeLoyalty";
 import { useMenuProducts } from "@/hooks/useMenuProducts";
+import CartEntryCard from "@/components/cart/CartEntryCard";
 
 export default function MenuScreen() {
   const router = useRouter();
   const { theme } = useThemeMode();
   const { config } = useAuth();
   const { items, total } = useCart();
-  const bannerTheme = useMemo(() => getLoyaltyBannerTheme(theme), [theme]);
   const { sections, loading, refreshing, loadError, refresh, retry } = useMenuProducts({
     assetsBaseUrl: config?.assets_base_url,
   });
@@ -36,43 +35,13 @@ export default function MenuScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.general.screenBackground }]}>
-      <TouchableOpacity
-        style={[
-          styles.cartSummary,
-          { backgroundColor: bannerTheme.backgroundColor },
-          itemCount === 0 && styles.cartSummaryDisabled,
-        ]}
-        onPress={() => router.push("/(tabs)/orders")}
+      <CartEntryCard
+        itemCount={itemCount}
+        total={total}
         disabled={itemCount === 0}
-        accessibilityRole="button"
-        accessibilityLabel={
-          itemCount > 0
-            ? `Abrir encomenda. ${itemCount} item${itemCount > 1 ? "s" : ""} no carrinho`
-            : "Sua encomenda vazia"
-        }
-        accessibilityHint={
-          itemCount > 0
-            ? "Abre a tela de encomenda para revisar os itens"
-            : "Adicione itens ao cardápio para habilitar a encomenda"
-        }
-        accessibilityState={{ disabled: itemCount === 0 }}
-      >
-        <View>
-          <Text style={[styles.cartTitle, { color: theme.colors.textLight }]}>Sua encomenda</Text>
-          <Text style={[styles.cartSubtitle, { color: theme.colors.textLight }]}>
-            {itemCount > 0
-              ? `${itemCount} item${itemCount > 1 ? "s" : ""} no carrinho`
-              : "Nenhum item adicionado"}
-          </Text>
-        </View>
-        <Text style={[styles.cartTotal, { color: theme.colors.textLight }]}>
-          {Number(total ?? 0).toLocaleString("pt-PT", {
-            style: "currency",
-            currency: "EUR",
-            minimumFractionDigits: 2,
-          })}
-        </Text>
-      </TouchableOpacity>
+        onPress={() => router.push("/cart" as never)}
+        theme={theme}
+      />
 
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme.colors.text }]}>Cardápio</Text>
@@ -171,10 +140,10 @@ export default function MenuScreen() {
                   </Text>
                 ) : null}
                 <View style={styles.affordanceRow}>
-                  <Text style={[styles.affordanceText, { color: theme.colors.primary }]}>
+                  <Text style={[styles.affordanceText, { color: theme.colors.brandOnSurface }]}>
                     Ver detalhes
                   </Text>
-                  <ChevronRight size={14} color={theme.colors.primary} />
+                  <ChevronRight size={14} color={theme.colors.brandOnSurface} />
                 </View>
               </View>
 
@@ -216,31 +185,6 @@ const styles = StyleSheet.create({
   subtitle: {
     marginVertical: 10,
     fontSize: 14,
-  },
-  cartSummary: {
-    width: "100%",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 15,
-    marginTop: -35,
-  },
-  cartSummaryDisabled: {
-    opacity: 0.6,
-  },
-  cartTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  cartSubtitle: {
-    marginTop: 2,
-    fontSize: 14,
-  },
-  cartTotal: {
-    fontSize: 16,
-    fontWeight: "800",
   },
   loader: {
     flex: 1,

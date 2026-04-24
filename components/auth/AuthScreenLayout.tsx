@@ -28,6 +28,9 @@ type AuthScreenLayoutProps = {
   logoSource?: ImageSourcePropType;
   logoStyle?: StyleProp<ImageStyle>;
   centerContent?: boolean;
+  screenBackgroundColor?: string;
+  titleColor?: string;
+  subtitleColor?: string;
 };
 
 const defaultLogo = require("@/assets/images/logo_icon.png");
@@ -42,12 +45,15 @@ export default function AuthScreenLayout({
   logoSource = defaultLogo,
   logoStyle,
   centerContent = false,
+  screenBackgroundColor,
+  titleColor,
+  subtitleColor,
 }: AuthScreenLayoutProps) {
   const { theme } = useThemeMode();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, screenBackgroundColor ? { backgroundColor: screenBackgroundColor } : null]}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -67,8 +73,12 @@ export default function AuthScreenLayout({
               ) : null}
 
               <View style={styles.header}>
-                <Text style={styles.title}>{title}</Text>
-                {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+                <Text style={[styles.title, titleColor ? { color: titleColor } : null]}>{title}</Text>
+                {subtitle ? (
+                  <Text style={[styles.subtitle, subtitleColor ? { color: subtitleColor } : null]}>
+                    {subtitle}
+                  </Text>
+                ) : null}
               </View>
 
               {children}

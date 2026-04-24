@@ -105,10 +105,9 @@ function ThemedApp() {
     if (Platform.OS !== "android") return;
 
     const buttonStyle = mode === "dark" ? "light" : "dark";
-    // Edge-to-edge habilitado no Android ignora background; evitamos warning com try/catch.
+    // Em edge-to-edge o Android ignora a cor de fundo da navigation bar.
     NavigationBar.setButtonStyleAsync(buttonStyle).catch(() => {});
-    NavigationBar.setBackgroundColorAsync(theme.general.screenBackground).catch(() => {});
-  }, [mode, theme.general.screenBackground]);
+  }, [mode]);
 
   return (
     <>

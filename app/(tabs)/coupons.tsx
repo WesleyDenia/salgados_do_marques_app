@@ -14,6 +14,7 @@ import { useCoupons } from "@/context/CouponsContext";
 import CouponCard from "@/components/CouponCard";
 import { useThemeMode } from "@/context/ThemeContext";
 import { useRouter } from "expo-router";
+import { getCouponStateCopy, hasUsableCouponCode } from "@/utils/coupons";
 
 export default function CouponsScreen() {
   const { theme, mode } = useThemeMode();
@@ -30,7 +31,6 @@ export default function CouponsScreen() {
     processingId,
     refresh,
     activateCoupon,
-    isActiveForMe,
   } = useCoupons();
 
   const emptyList = useMemo(
@@ -47,7 +47,7 @@ export default function CouponsScreen() {
           Ative o seu cupom e aproveite os descontos!
         </Text>
         <Text style={styles.helperText}>
-          Ativar gera seu código de desconto. Depois, apresente esse código na loja ao pagar a encomenda.
+          Seus cupons privados e públicos ficam aqui. Ative os públicos e apresente o código na loja quando for usar.
         </Text>
 
         {loading ? (
@@ -68,8 +68,9 @@ export default function CouponsScreen() {
               />
             }
             renderItem={({ item }) => {
-              const active = isActiveForMe(item.id);
-              const userCoupon = myCouponsMap[item.id];
+              const userCoupon = item.user_coupon ?? myCouponsMap[item.id];
+              const stateCopy = getCouponStateCopy(userCoupon);
+              const active = hasUsableCouponCode(userCoupon);
 
               return (
                 <CouponCard
@@ -77,10 +78,12 @@ export default function CouponsScreen() {
                   theme={theme}
                   tokens={screenTheme.cardTheme}
                   active={active}
-                  code={userCoupon?.external_code}
+                  code={active ? userCoupon?.external_code ?? item.code : null}
+                  statusTitle={!active ? stateCopy?.title ?? null : null}
+                  statusHint={!active ? stateCopy?.hint ?? null : null}
                   processing={processingId === item.id}
                   disabled={!!processingId}
-                  onActivate={active ? undefined : () => activateCoupon(item.id)}
+                  onActivate={active || item.origin?.type === "partner" ? undefined : () => activateCoupon(item.id)}
                   style={styles.card}
                   onPress={() => router.push(`/details/coupon/${item.id}`)}
                 />

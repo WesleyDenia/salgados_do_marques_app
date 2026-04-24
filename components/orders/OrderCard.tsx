@@ -3,6 +3,7 @@ import { Text, TouchableOpacity, View, StyleSheet } from "react-native";
 import { Order } from "@/types";
 import { AppTheme } from "@/constants/theme";
 import { formatCurrency, formatDateTime } from "@/utils/format";
+import { getOrderStatusColors, getOrderStatusLabel } from "@/components/orders/orderStatus";
 
 type OrderCardProps = {
   order: Order;
@@ -12,51 +13,10 @@ type OrderCardProps = {
   canCancel: boolean;
 };
 
-const STATUS_LABELS: Record<Order["status"], string> = {
-  placed: "Realizada",
-  accepted: "Aceita",
-  rejected: "Rejeitada",
-  ready: "Pronta",
-  done: "Concluída",
-  canceled: "Cancelada",
-};
-
-const getStatusColors = (status: Order["status"], theme: AppTheme) => {
-  switch (status) {
-    case "accepted":
-      return {
-        background: theme.colors.accentSuccess,
-        text: theme.colors.textLight,
-      };
-    case "ready":
-      return {
-        background: theme.colors.primary,
-        text: theme.colors.textLight,
-      };
-    case "rejected":
-    case "canceled":
-      return {
-        background: theme.colors.errorFill,
-        text: theme.colors.textLight,
-      };
-    case "done":
-      return {
-        background: theme.colors.disabledBackground,
-        text: theme.colors.text,
-      };
-    case "placed":
-    default:
-      return {
-        background: theme.general.surface,
-        text: theme.colors.text,
-      };
-  }
-};
-
 function OrderCard({ order, theme, onPress, onCancel, canCancel }: OrderCardProps) {
   const styles = createStyles(theme);
-  const statusColors = getStatusColors(order.status, theme);
-  const statusLabel = STATUS_LABELS[order.status] ?? order.status;
+  const statusColors = getOrderStatusColors(order.status, theme);
+  const statusLabel = getOrderStatusLabel(order.status);
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>

@@ -22,6 +22,14 @@ type UseStoresResult = {
   fetchStores: (params?: StoreQuery) => Promise<void>;
 };
 
+const normalizeStore = (store: Store): Store => ({
+  ...store,
+  pickup_weekly_schedule: store.pickup_weekly_schedule ?? {},
+  pickup_date_exceptions: Array.isArray(store.pickup_date_exceptions)
+    ? [...store.pickup_date_exceptions].sort((a, b) => a.date.localeCompare(b.date))
+    : [],
+});
+
 export function useStores(): UseStoresResult {
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(false);
@@ -47,7 +55,7 @@ export function useStores(): UseStoresResult {
       };
       const { data } = await api.get("/stores", { params: normalizedParams, signal: controller.signal });
       const list = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
-      setStores(list);
+      setStores(list.map(normalizeStore));
     } catch (err: any) {
       if (err?.name === "AbortError" || err?.name === "CanceledError") return;
       console.error("Erro ao carregar lojas:", err?.response?.status, err?.response?.data ?? err);

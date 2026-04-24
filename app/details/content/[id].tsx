@@ -14,6 +14,7 @@ import { AppTheme } from "@/constants/theme";
 import { useHomeContent } from "@/hooks/useHomeContent";
 import { useAuth } from "@/context/AuthContext";
 import { resolveAssetUrl } from "@/utils/url";
+import { getInternalCtaLabel, parseContentHomeBody } from "@/utils/contentHomeTokens";
 import AppHeader from "@/components/AppHeader";
 
 const AutoSizedImage = memo(({ uri, style }: { uri: string; style: any }) => {
@@ -65,6 +66,10 @@ export default function ContentDetailScreen() {
   const barStyle = mode === "dark" ? "light-content" : "dark-content";
 
   const imageUri = block ? resolveAssetUrl(block.image_url, config?.assets_base_url) : null;
+  const descriptionSegments = useMemo(
+    () => parseContentHomeBody(block?.text_body),
+    [block?.text_body],
+  );
 
   const content = block ? (
     <ScrollView contentContainerStyle={styles.container}>
@@ -75,8 +80,28 @@ export default function ContentDetailScreen() {
       {imageUri ? <AutoSizedImage uri={imageUri} style={styles.heroImage} /> : null}
 
       {block.title ? <Text style={styles.title}>{block.title}</Text> : null}
-      {block.text_body ? (
-        <Text style={styles.description}>{block.text_body}</Text>
+      {descriptionSegments.length ? (
+        <View style={styles.descriptionGroup}>
+          {descriptionSegments.map((segment, index) =>
+            segment.type === "text" ? (
+              segment.value.trim() ? (
+                <Text key={`description-text-${index}`} style={styles.description}>
+                  {segment.value.trim()}
+                </Text>
+              ) : null
+            ) : (
+              <TouchableOpacity
+                key={`description-cta-${index}`}
+                style={styles.inlineCtaButton}
+                onPress={() => router.push(segment.route as never)}
+              >
+                <Text style={styles.inlineCtaButtonText}>
+                  {getInternalCtaLabel(segment.route)}
+                </Text>
+              </TouchableOpacity>
+            ),
+          )}
+        </View>
       ) : null}
     </ScrollView>
   ) : (
@@ -125,6 +150,20 @@ const createStyles = (theme: AppTheme) =>
       fontSize: 16,
       lineHeight: 24,
       color: theme.colors.text,
+    },
+    descriptionGroup: {
+      gap: theme.spacing.md,
+    },
+    inlineCtaButton: {
+      alignSelf: "flex-start",
+      backgroundColor: theme.colors.primary,
+      borderRadius: theme.radius.md,
+      paddingHorizontal: theme.spacing.lg,
+      paddingVertical: theme.spacing.sm,
+    },
+    inlineCtaButtonText: {
+      color: theme.colors.textLight,
+      fontWeight: "600",
     },
     backButtonInline: {
       alignSelf: "flex-start",
