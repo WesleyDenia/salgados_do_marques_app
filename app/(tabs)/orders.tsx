@@ -132,6 +132,25 @@ export default function OrdersScreen() {
     [refresh]
   );
 
+  const requestCancelOrder = useCallback(
+    (orderId: number) => {
+      Alert.alert("Cancelar encomenda?", "Tem a certeza de que quer cancelar esta encomenda?", [
+        {
+          text: "Voltar",
+          style: "cancel",
+        },
+        {
+          text: "Cancelar encomenda",
+          style: "destructive",
+          onPress: () => {
+            void handleCancelOrder(orderId);
+          },
+        },
+      ]);
+    },
+    [handleCancelOrder]
+  );
+
   return (
     <View style={styles.safeArea}>
       <FlatList
@@ -181,7 +200,7 @@ export default function OrdersScreen() {
             order={item}
             theme={theme}
             onPress={() => setSelectedOrder(item)}
-            onCancel={() => handleCancelOrder(item.id)}
+            onCancel={() => requestCancelOrder(item.id)}
             canCancel={canCancel(item)}
           />
         )}
@@ -216,7 +235,7 @@ export default function OrdersScreen() {
         theme={theme}
         formatFlavorLabels={formatFlavorLabels}
         onClose={() => setSelectedOrder(null)}
-        onCancel={handleCancelOrder}
+        onCancel={requestCancelOrder}
         canCancel={canCancel}
         onStorePress={() => router.push("/(tabs)/stores")}
       />

@@ -11,6 +11,7 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
+import Constants from "expo-constants";
 import { Edit3 } from "lucide-react-native";
 import { useAuth } from "@/context/AuthContext";
 import { useThemeMode } from "@/context/ThemeContext";
@@ -24,6 +25,13 @@ export default function ProfileScreen() {
   const styles = useMemo(() => createStyles(theme), [theme]);
   const barStyle = mode === "dark" ? "light-content" : "dark-content";
   const [updatingTheme, setUpdatingTheme] = useState(false);
+  const appVersion = useMemo(() => {
+    const version =
+      Constants.nativeAppVersion ?? Constants.expoConfig?.version ?? "—";
+    const build = Constants.nativeBuildVersion;
+
+    return build ? `Versão ${version} (${build})` : `Versão ${version}`;
+  }, []);
 
   const handleToggleTheme = useCallback(
     async (value: boolean) => {
@@ -125,6 +133,8 @@ export default function ProfileScreen() {
         >
           <Text style={styles.secondaryButtonText}>Sair</Text>
         </TouchableOpacity>
+
+        <Text style={styles.versionText}>{appVersion}</Text>
       </ScrollView>
     </View>
   );
@@ -137,6 +147,7 @@ const createStyles = (theme: AppTheme) =>
       backgroundColor: theme.general.screenBackground,
     },
     content: {
+      flexGrow: 1,
       padding: theme.spacing.lg,
       backgroundColor: theme.general.screenBackground,
     },
@@ -211,6 +222,13 @@ const createStyles = (theme: AppTheme) =>
     secondaryButtonText: {
       color: theme.colors.text,
       fontWeight: "600",
+    },
+    versionText: {
+      marginTop: "auto",
+      paddingTop: theme.spacing.lg,
+      alignSelf: "flex-start",
+      color: theme.colors.textSecondary,
+      fontSize: 12,
     },
     centered: {
       flex: 1,

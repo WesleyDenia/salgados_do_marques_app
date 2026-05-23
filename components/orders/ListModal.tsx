@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppTheme } from "@/constants/theme";
 
 type ListModalProps<T> = {
@@ -23,12 +24,13 @@ function ListModal<T>({
   emptyMessage,
   theme,
 }: ListModalProps<T>) {
+  const insets = useSafeAreaInsets();
   const styles = createStyles(theme);
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View style={styles.card}>
+        <View style={[styles.card, { paddingBottom: 20 + Math.max(insets.bottom, 0) }]}>
           <Text style={styles.title}>{title}</Text>
           <FlatList
             data={data}

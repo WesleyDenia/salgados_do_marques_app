@@ -8,6 +8,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { MapPin } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Order } from "@/types";
 import { AppTheme } from "@/constants/theme";
 import { formatCurrency, formatDateTime } from "@/utils/format";
@@ -34,14 +35,15 @@ function OrderDetailModal({
   canCancel,
   onStorePress,
 }: OrderDetailModalProps) {
+  const insets = useSafeAreaInsets();
   const styles = createStyles(theme);
   const statusColors = order ? getOrderStatusColors(order.status, theme) : null;
   const statusLabel = order ? getOrderStatusLabel(order.status) : null;
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View style={styles.card}>
+        <View style={[styles.card, { paddingBottom: 20 + Math.max(insets.bottom, 0) }]}>
           {order ? (
             <>
               <Text style={styles.title}>Encomenda #{order.id}</Text>

@@ -152,10 +152,7 @@ export default function ProductDetailScreen() {
     }
 
     if (totalFlavorCount === 0) {
-      return {
-        tone: "warning" as const,
-        message: `Selecione pelo menos 1 sabor para este pack (até ${maxFlavors}).`,
-      };
+      return null;
     }
 
     if (totalFlavorCount < maxFlavors) {
@@ -336,19 +333,21 @@ export default function ProductDetailScreen() {
 
             {selectedVariant && maxFlavors > 0 ? (
               <View style={styles.flavorSection}>
-                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                <Text
+                  style={[
+                    styles.sectionTitle,
+                    { color: mode === "dark" ? theme.colors.warningText : theme.colors.primary },
+                  ]}
+                >
                   Escolha os sabores (até {maxFlavors})
                 </Text>
-                <Text style={[styles.helperText, { color: theme.colors.textSecondary }]}>
+                <Text style={[styles.flavorCounterText, { color: theme.colors.textSecondary }]}>
                   Selecionados: {totalFlavorCount} de {maxFlavors}
                 </Text>
                 {flavorSelectionStatus ? (
                   <Text
                     style={[
                       styles.flavorStatusText,
-                      flavorSelectionStatus.tone === "warning" && {
-                        color: theme.colors.warningText,
-                      },
                       flavorSelectionStatus.tone === "success" && {
                         color: theme.colors.successText,
                         fontWeight: "600",
@@ -590,6 +589,11 @@ const styles = StyleSheet.create({
   },
   helperText: {
     fontSize: 12,
+  },
+  flavorCounterText: {
+    fontSize: 16,
+    fontWeight: "700",
+    lineHeight: 22,
   },
   flavorStatusText: {
     fontSize: 12,
